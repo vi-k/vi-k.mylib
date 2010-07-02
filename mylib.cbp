@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="mylib" />
+		<Option pch_mode="2" />
+		<Option compiler="msvc8" />
+		<Build>
+			<Target title="Debug">
+				<Option output="mylibd" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="obj\Debug\" />
+				<Option type="2" />
+				<Option compiler="msvc8" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="/MTd" />
+					<Add option="/W3" />
+					<Add option="/Zi" />
+					<Add option="/D_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option="/DEBUG" />
+					<Add option='/NODEFAULTLIB:&quot;libcmtd&quot;' />
+					<Add option='/NODEFAULTLIB:&quot;msvcrtd&quot;' />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="mylib" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="obj\Release\" />
+				<Option type="2" />
+				<Option compiler="msvc8" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="/MT" />
+					<Add option="/Ox" />
+					<Add option="/W3" />
+					<Add option="/DNDEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option='/NODEFAULTLIB:&quot;libcmt&quot;' />
+					<Add option='/NODEFAULTLIB:&quot;msvcrt&quot;' />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="/Zc:wchar_t" />
+		</Compiler>
+		<Unit filename="my_debug.h" />
+		<Unit filename="my_employer.h" />
+		<Unit filename="my_exception.h" />
+		<Unit filename="my_fs.h" />
+		<Unit filename="my_http.cpp" />
+		<Unit filename="my_http.h" />
+		<Unit filename="my_inet.cpp" />
+		<Unit filename="my_inet.h" />
+		<Unit filename="my_karma.h" />
+		<Unit filename="my_log.h" />
+		<Unit filename="my_mru.h" />
+		<Unit filename="my_num.cpp" />
+		<Unit filename="my_num.h" />
+		<Unit filename="my_ptr.h" />
+		<Unit filename="my_punycode.cpp" />
+		<Unit filename="my_punycode.h" />
+		<Unit filename="my_qi.h" />
+		<Unit filename="my_stopwatch.h" />
+		<Unit filename="my_str.cpp" />
+		<Unit filename="my_str.h" />
+		<Unit filename="my_thread.h" />
+		<Unit filename="my_time.cpp" />
+		<Unit filename="my_time.h" />
+		<Unit filename="my_utf8.cpp" />
+		<Unit filename="my_utf8.h" />
+		<Unit filename="my_xml.cpp" />
+		<Unit filename="my_xml.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

@@ -49,8 +49,12 @@ protected:
 
 		exception(const std::exception &e) throw()
 		{
-			message( my::str::to_wstring(e.what()) );
-			//*this << my::param(L"typeid", typeid(e).name());
+	    	const my::exception *my_e_ptr = dynamic_cast<const my::exception*>(&e);
+
+		    if (my_e_ptr)
+    			*this = *my_e_ptr;
+			else
+				message( my::str::to_wstring(e.what()) );
 		}
 
 		std::wstring message() const throw()
@@ -89,7 +93,6 @@ protected:
 		{
 			parent_message += L"\n-- std::exception --\n"
 				+ my::str::to_wstring(e.what());
-				//+ L"\ntypeid: " + my::str::to_wstring(typeid(e).name());
 			return *this;
 		}
 

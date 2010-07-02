@@ -1,6 +1,4 @@
-﻿#include "stdafx.h"
-
-#include "my_time.h"
+﻿#include "my_time.h"
 #include "my_exception.h"
 
 using namespace std;

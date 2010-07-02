@@ -1,6 +1,4 @@
-﻿#include "stdafx.h"
-
-#include "my_num.h"
+﻿#include "my_num.h"
 
 #include <string>
 #include <iostream>
@@ -90,8 +88,6 @@ int main()
 	TEST("int",int,int,"12345",2)
 	TEST("int",int,int,"12345",1)
 	TEST("int",int,int,"12345",0)
-
-	long long a;
 
 	cout.precision(7);
 	TEST("float",float,float,"0.123456",-1)

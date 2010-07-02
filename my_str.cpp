@@ -1,6 +1,4 @@
-﻿#include "stdafx.h"
-
-#include <boost/config/warning_disable.hpp> /* против unsafe */
+﻿#include <boost/config/warning_disable.hpp> /* против unsafe */
 
 #include "my_str.h"
 

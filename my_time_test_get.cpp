@@ -1,5 +1,3 @@
-#include "stdafx.h"
-
 #include "my_time.h"
 //#include "my_num.cpp"
 

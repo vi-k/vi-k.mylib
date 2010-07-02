@@ -1,6 +1,4 @@
-﻿#include "stdafx.h"
-
-#include "my_xml.h"
+﻿#include "my_xml.h"
 #include "my_utf8.h"
 #include "my_str.h"
 #include "my_exception.h"

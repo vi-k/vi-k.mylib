@@ -1,32 +1,13 @@
-﻿#include "stdafx.h"
+﻿#include <boost/config/warning_disable.hpp> /* против unsafe */
 
-#include <boost/config/warning_disable.hpp> /* против unsafe */
-
-#include "../common/my_http.h"
-#include "../common/my_utf8.h"
-#include "../common/my_str.h"
-#include "../common/my_qi.h"
-#include "../common/my_fs.h"
-#include "../common/my_exception.h"
-
-//#define MY_STOPWATCH_DEBUG
-#ifdef MY_STOPWATCH_DEBUG
-#include "../common/my_log.h"
-extern my::log main_log;
-#endif
-
-#include "../common/my_debug.h"
-MY_STOPWATCH( __read_reply_sw1(my::stopwatch::show_all & ~my::stopwatch::show_total) )
-MY_STOPWATCH( __read_reply_sw2(my::stopwatch::show_all & ~my::stopwatch::show_total) )
-MY_STOPWATCH( __read_header_sw1(my::stopwatch::show_all & ~my::stopwatch::show_total) )
-MY_STOPWATCH( __read_header_sw2(my::stopwatch::show_all & ~my::stopwatch::show_total) )
-MY_STOPWATCH( __read_body_sw1(my::stopwatch::show_all & ~my::stopwatch::show_total) )
-MY_STOPWATCH( __read_body_sw2(my::stopwatch::show_all & ~my::stopwatch::show_total) )
-MY_STOPWATCH( __get_sw(my::stopwatch::show_all & ~my::stopwatch::show_total) )
+#include "my_http.h"
+#include "my_utf8.h"
+#include "my_str.h"
+#include "my_qi.h"
+#include "my_fs.h"
+#include "my_exception.h"
 
 #include <errno.h>
-#include <string.h> /* strlen */
-#include <wchar.h> /* wcslen */
 
 #include <iterator>
 using namespace std;
@@ -143,7 +124,7 @@ string percent_decode(const char *str, int len)
 			| '%' >> qi::uint_parser<unsigned char, 16, 2, 2>();
 
 	if (len < 0)
-		len = strlen(str);
+		len = my::str::length(str);
 
 	qi::parse(str, str + len,
 		*char_r >> qi::eoi, out); /* eoi - указатель конца строки */
@@ -161,7 +142,7 @@ string percent_encode(const char *str,
 	};
 
 	if (len < 0)
-		len = strlen(str);
+		len = my::str::length(str);
 
 	const char *ptr_in = str;
 	/* Строка может содержать нулевой символ, поэтому
@@ -197,12 +178,8 @@ string percent_encode(const char *str,
 
 void message::read_header(tcp::socket &socket)
 {
-	MY_STOPWATCH_START(__read_header_sw1)
-
-	MY_STOPWATCH_START(__read_header_sw2)
 	size_t n = asio::read_until(socket, buf_, boost::regex("^\r\n"));
-	MY_STOPWATCH_FINISH(__read_header_sw2)
-	
+
 	header_.resize(n);
 	buf_.sgetn((char*)header_.c_str(), n);
 
@@ -215,38 +192,28 @@ void message::read_header(tcp::socket &socket)
 		header[ my::utf8::decode( percent_decode(iter->first) ) ]
 			= my::utf8::decode( percent_decode(iter->second) );
 	}
-
-	MY_STOPWATCH_FINISH(__read_header_sw1)
 }
 
 void message::read_body(tcp::socket &socket)
 {
-	MY_STOPWATCH_START(__read_body_sw1)
-
-	MY_STOPWATCH_START(__read_body_sw2)
-
 	/* Чтение здесь всегда заканчивается ошибкой! */
 	boost::system::error_code ec;
 	asio::read(socket, buf_, boost::asio::transfer_all(), ec);
-	
-	MY_STOPWATCH_FINISH(__read_body_sw2)
-	
+
 	size_t n = buf_.size();
 	body.resize(n);
 	buf_.sgetn((char*)body.c_str(), n);
-
-	MY_STOPWATCH_FINISH(__read_body_sw1)
 }
 
 wstring message::content_type()
 {
 	wstring value = header[L"Content-Type"];
-	
+
 	value = value.substr(0, value.find_first_of(L';'));
 
 	if (value.empty())
 		value = L"text/plain"; /* Так требует RFC! */
-	
+
 	return value;
 }
 
@@ -269,7 +236,7 @@ void message::save(const wstring &filename)
 	ofstream fs(filename.c_str(), ios::binary);
 	if (fs)
 		fs << body;
-	
+
 	if (!fs)
 		throw my::exception(L"Не удалось сохранить данные в файл")
 			<< my::param(L"file", filename)
@@ -278,11 +245,7 @@ void message::save(const wstring &filename)
 
 void reply::read_reply(tcp::socket &socket)
 {
-	MY_STOPWATCH_START(__read_reply_sw1)
-
-	MY_STOPWATCH_START(__read_reply_sw2)
 	size_t n = asio::read_until(socket, buf_, "\r\n");
-	MY_STOPWATCH_FINISH(__read_reply_sw2)
 
 	reply_.resize(n);
 	buf_.sgetn((char*)reply_.c_str(), n);
@@ -291,34 +254,18 @@ void reply::read_reply(tcp::socket &socket)
 	status_code = parse_reply(reply_, status_message_s);
 
 	status_message = my::utf8::decode( percent_decode(status_message_s) );
-
-	MY_STOPWATCH_FINISH(__read_reply_sw1)
 }
 
 void reply::get(tcp::socket &socket,
 	const string &request, bool do_read_body)
 {
-	MY_STOPWATCH_START(__get_sw)
-
 	asio::write(socket, asio::buffer(request), asio::transfer_all());
-	
+
 	read_reply(socket);
 	read_header(socket);
-	
+
 	if (do_read_body)
 		read_body(socket);
-
-	MY_STOPWATCH_FINISH(__get_sw)
-
-	MY_STOPWATCH_OUT(main_log, L"get " << my::str::escape(request).c_str())
-	MY_STOPWATCH_OUT(main_log, L"\nget " << __get_sw)
-	MY_STOPWATCH_OUT(main_log, L"\nread_reply1 " << __read_reply_sw1)
-	MY_STOPWATCH_OUT(main_log, L"\nread_reply2 " << __read_reply_sw2)
-	MY_STOPWATCH_OUT(main_log, L"\nread_header1 " << __read_header_sw1)
-	MY_STOPWATCH_OUT(main_log, L"\nread_header2 " << __read_header_sw2)
-	MY_STOPWATCH_OUT(main_log, L"\nread_body1 " << __read_body_sw1)
-	MY_STOPWATCH_OUT(main_log, L"\nread_body2 " << __read_body_sw2)
-	MY_STOPWATCH_OUT(main_log, main_log)
 }
 
 void request::read_request(tcp::socket &socket)

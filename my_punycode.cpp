@@ -11,8 +11,6 @@
 	Copyright (C) The Internet Society (2003).  All Rights Reserved.
 */
 
-#include "stdafx.h"
-
 #include "my_punycode.h"
 #include "my_exception.h"
 

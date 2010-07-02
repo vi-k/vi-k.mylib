@@ -1,6 +1,4 @@
-﻿#include "stdafx.h"
-
-#include "my_inet.h"
+﻿#include "my_inet.h"
 #include "my_str.h"
 #include "my_punycode.h"
 
@@ -8,12 +6,12 @@ using namespace std;
 
 namespace my { namespace ip {
 
-string to_string(const ::ip::address_v4 &address)
+string to_string(const asio::ip::address_v4 &address)
 {
 	return address.to_string();
 }
 
-wstring to_wstring(const ::ip::address_v4 &address)
+wstring to_wstring(const asio::ip::address_v4 &address)
 {
 	return my::str::to_wstring( address.to_string() );
 }

@@ -1,5 +1,3 @@
-#include "stdafx.h"
-
 #include "my_num.h"
 
 #include <string>

@@ -14,15 +14,19 @@ using boost::asio::ip::tcp;
 namespace my { namespace ip
 {
 
-std::string to_string(const ::ip::address_v4 &address);
-std::wstring to_wstring(const ::ip::address_v4 &address);
+std::string to_string(const asio::ip::address_v4 &address);
+std::wstring to_wstring(const asio::ip::address_v4 &address);
 
+/* Преобразование URL в Punycode:
+	президент.рф -> xn--d1abbgf6aiiy.xn--p1ai */
 std::string punycode_encode(const wchar_t *str, int len = -1);
 inline std::string punycode_encode(const std::wstring &str)
 {
 	return my::ip::punycode_encode(str.c_str(), (int)str.size());
 }
 
+/* Преобразование Punycode в URL:
+	xn--d1abbgf6aiiy.xn--p1ai -> президент.рф */
 std::wstring punycode_decode(const char *str, int len = -1);
 inline std::wstring punycode_decode(const std::string &str)
 {
