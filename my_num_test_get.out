@@ -1,0 +1,255 @@
+type=int
+string=12345
+get(cstr,-1)=5 n=12345
+get(str)=5 n=12345
+get(wcstr,-1)=5 n=12345
+get(wstr)=5 n=12345
+to_int_def(cstr,-1)=12345
+to_int_def(str)=12345
+to_int_def(wcstr,-1)=12345
+to_int_def(wstr)=12345
+try_to_int(cstr,-1)=true n=12345
+try_to_int(str)=true n=12345
+try_to_int(wcstr,-1)=true n=12345
+try_to_int(wstr)=true n=12345
+
+type=int
+string=-999999
+get(cstr,-1)=7 n=-999999
+get(str)=7 n=-999999
+get(wcstr,-1)=7 n=-999999
+get(wstr)=7 n=-999999
+to_int_def(cstr,-1)=-999999
+to_int_def(str)=-999999
+to_int_def(wcstr,-1)=-999999
+to_int_def(wstr)=-999999
+try_to_int(cstr,-1)=true n=-999999
+try_to_int(str)=true n=-999999
+try_to_int(wcstr,-1)=true n=-999999
+try_to_int(wstr)=true n=-999999
+
+type=int
+string=3000000000
+get(cstr,-1)=9 (fail) n=300000000
+get(str)=9 (fail) n=300000000
+get(wcstr,-1)=9 (fail) n=300000000
+get(wstr)=9 (fail) n=300000000
+to_int_def(cstr,-1)=0
+to_int_def(str)=0
+to_int_def(wcstr,-1)=0
+to_int_def(wstr)=0
+try_to_int(cstr,-1)=false n=0
+try_to_int(str)=false n=0
+try_to_int(wcstr,-1)=false n=0
+try_to_int(wstr)=false n=0
+
+type=uint
+string=-1
+get(cstr,-1)=0 (fail) n=0
+get(str)=0 (fail) n=0
+get(wcstr,-1)=0 (fail) n=0
+get(wstr)=0 (fail) n=0
+to_uint_def(cstr,-1)=0
+to_uint_def(str)=0
+to_uint_def(wcstr,-1)=0
+to_uint_def(wstr)=0
+try_to_uint(cstr,-1)=false n=0
+try_to_uint(str)=false n=0
+try_to_uint(wcstr,-1)=false n=0
+try_to_uint(wstr)=false n=0
+
+type=short
+string=-32768
+get(cstr,-1)=6 n=-32768
+get(str)=6 n=-32768
+get(wcstr,-1)=6 n=-32768
+get(wstr)=6 n=-32768
+to_short_def(cstr,-1)=-32768
+to_short_def(str)=-32768
+to_short_def(wcstr,-1)=-32768
+to_short_def(wstr)=-32768
+try_to_short(cstr,-1)=true n=-32768
+try_to_short(str)=true n=-32768
+try_to_short(wcstr,-1)=true n=-32768
+try_to_short(wstr)=true n=-32768
+
+type=short
+string=32768
+get(cstr,-1)=4 (fail) n=32760
+get(str)=4 (fail) n=32760
+get(wcstr,-1)=4 (fail) n=32760
+get(wstr)=4 (fail) n=32760
+to_short_def(cstr,-1)=0
+to_short_def(str)=0
+to_short_def(wcstr,-1)=0
+to_short_def(wstr)=0
+try_to_short(cstr,-1)=false n=0
+try_to_short(str)=false n=0
+try_to_short(wcstr,-1)=false n=0
+try_to_short(wstr)=false n=0
+
+type=ulong
+string=123
+get(cstr,-1)=3 n=123
+get(str)=3 n=123
+get(wcstr,-1)=3 n=123
+get(wstr)=3 n=123
+to_ulong_def(cstr,-1)=123
+to_ulong_def(str)=123
+to_ulong_def(wcstr,-1)=123
+to_ulong_def(wstr)=123
+try_to_ulong(cstr,-1)=true n=123
+try_to_ulong(str)=true n=123
+try_to_ulong(wcstr,-1)=true n=123
+try_to_ulong(wstr)=true n=123
+
+type=ulong
+string=123a
+get(cstr,-1)=3 (fail) n=123
+get(str)=3 (fail) n=123
+get(wcstr,-1)=3 (fail) n=123
+get(wstr)=3 (fail) n=123
+to_ulong_def(cstr,-1)=0
+to_ulong_def(str)=0
+to_ulong_def(wcstr,-1)=0
+to_ulong_def(wstr)=0
+try_to_ulong(cstr,-1)=false n=0
+try_to_ulong(str)=false n=0
+try_to_ulong(wcstr,-1)=false n=0
+try_to_ulong(wstr)=false n=0
+
+type=longlong
+string=-9223372036854775808
+get(cstr,-1)=20 n=-9223372036854775808
+get(str)=20 n=-9223372036854775808
+get(wcstr,-1)=20 n=-9223372036854775808
+get(wstr)=20 n=-9223372036854775808
+to_longlong_def(cstr,-1)=-9223372036854775808
+to_longlong_def(str)=-9223372036854775808
+to_longlong_def(wcstr,-1)=-9223372036854775808
+to_longlong_def(wstr)=-9223372036854775808
+try_to_longlong(cstr,-1)=true n=-9223372036854775808
+try_to_longlong(str)=true n=-9223372036854775808
+try_to_longlong(wcstr,-1)=true n=-9223372036854775808
+try_to_longlong(wstr)=true n=-9223372036854775808
+
+type=ulonglong
+string=18446744073709551615
+get(cstr,-1)=20 n=18446744073709551615
+get(str)=20 n=18446744073709551615
+get(wcstr,-1)=20 n=18446744073709551615
+get(wstr)=20 n=18446744073709551615
+to_ulonglong_def(cstr,-1)=18446744073709551615
+to_ulonglong_def(str)=18446744073709551615
+to_ulonglong_def(wcstr,-1)=18446744073709551615
+to_ulonglong_def(wstr)=18446744073709551615
+try_to_ulonglong(cstr,-1)=true n=18446744073709551615
+try_to_ulonglong(str)=true n=18446744073709551615
+try_to_ulonglong(wcstr,-1)=true n=18446744073709551615
+try_to_ulonglong(wstr)=true n=18446744073709551615
+
+type=int
+string=12345
+get(cstr,5)=5 n=12345
+get(wcstr,5)=5 n=12345
+to_int_def(cstr,5)=12345
+to_int_def(wcstr,5)=12345
+to_int_def(wstr)=12345
+try_to_int(cstr,5)=true n=12345
+try_to_int(wcstr,5)=true n=12345
+
+type=int
+string=12345
+get(cstr,4)=4 n=1234
+get(wcstr,4)=4 n=1234
+to_int_def(cstr,4)=1234
+to_int_def(wcstr,4)=1234
+to_int_def(wstr)=1234
+try_to_int(cstr,4)=true n=1234
+try_to_int(wcstr,4)=true n=1234
+
+type=int
+string=12345
+get(cstr,3)=3 n=123
+get(wcstr,3)=3 n=123
+to_int_def(cstr,3)=123
+to_int_def(wcstr,3)=123
+to_int_def(wstr)=123
+try_to_int(cstr,3)=true n=123
+try_to_int(wcstr,3)=true n=123
+
+type=int
+string=12345
+get(cstr,2)=2 n=12
+get(wcstr,2)=2 n=12
+to_int_def(cstr,2)=12
+to_int_def(wcstr,2)=12
+to_int_def(wstr)=12
+try_to_int(cstr,2)=true n=12
+try_to_int(wcstr,2)=true n=12
+
+type=int
+string=12345
+get(cstr,1)=1 n=1
+get(wcstr,1)=1 n=1
+to_int_def(cstr,1)=1
+to_int_def(wcstr,1)=1
+to_int_def(wstr)=1
+try_to_int(cstr,1)=true n=1
+try_to_int(wcstr,1)=true n=1
+
+type=int
+string=12345
+get(cstr,0)=0 n=0
+get(wcstr,0)=0 n=0
+to_int_def(cstr,0)=0
+to_int_def(wcstr,0)=0
+to_int_def(wstr)=0
+try_to_int(cstr,0)=false n=0
+try_to_int(wcstr,0)=false n=0
+
+type=float
+string=0.123456
+get(cstr,-1)=8 n=0.1234560
+get(str)=8 n=0.1234560
+get(wcstr,-1)=8 n=0.1234560
+get(wstr)=8 n=0.1234560
+to_float_def(cstr,-1)=0.1234560
+to_float_def(str)=0.1234560
+to_float_def(wcstr,-1)=0.1234560
+to_float_def(wstr)=0.1234560
+try_to_float(cstr,-1)=true n=0.1234560
+try_to_float(str)=true n=0.1234560
+try_to_float(wcstr,-1)=true n=0.1234560
+try_to_float(wstr)=true n=0.1234560
+
+type=double
+string=0.123456789012345
+get(cstr,-1)=17 n=0.1234567890123450
+get(str)=17 n=0.1234567890123450
+get(wcstr,-1)=17 n=0.1234567890123450
+get(wstr)=17 n=0.1234567890123450
+to_double_def(cstr,-1)=0.1234567890123450
+to_double_def(str)=0.1234567890123450
+to_double_def(wcstr,-1)=0.1234567890123450
+to_double_def(wstr)=0.1234567890123450
+try_to_double(cstr,-1)=true n=0.1234567890123450
+try_to_double(str)=true n=0.1234567890123450
+try_to_double(wcstr,-1)=true n=0.1234567890123450
+try_to_double(wstr)=true n=0.1234567890123450
+
+type=long_double
+string=0.123456789012345
+get(cstr,-1)=17 n=0.1234567890123450
+get(str)=17 n=0.1234567890123450
+get(wcstr,-1)=17 n=0.1234567890123450
+get(wstr)=17 n=0.1234567890123450
+to_long_double_def(cstr,-1)=0.1234567890123450
+to_long_double_def(str)=0.1234567890123450
+to_long_double_def(wcstr,-1)=0.1234567890123450
+to_long_double_def(wstr)=0.1234567890123450
+try_to_long_double(cstr,-1)=true n=0.1234567890123450
+try_to_long_double(str)=true n=0.1234567890123450
+try_to_long_double(wcstr,-1)=true n=0.1234567890123450
+try_to_long_double(wstr)=true n=0.1234567890123450
+
