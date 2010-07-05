@@ -286,8 +286,7 @@ public:
 		return ptr;
 	}
 
-	/* Усыпить поток (но только, если
-		не было команды завершить работу) */
+	/* Усыпить поток (но только, если не было команды завершить работу) */
 	bool sleep(worker::ptr ptr)
 	{
 		/* Блокировкой гарантируем атомарность операций:
@@ -317,26 +316,31 @@ public:
 	}
 
 	/* Разбудить поток */
-	void wake_up(worker::ptr ptr, bool with_lock = true)
+	void wake_up(worker::ptr ptr)
 	{
-		if (!with_lock)
-			/* Блокировка обеспечена вызывающей стороной */
-			ptr->sleep_cond_.notify_all();
-		else
-		{
-			/* Блокировкой гарантируем, что не окажемся между
-				if (!finish()) и wait(). Иначе мы "разбудим" ещё
-				не спящий поток, но который тут же заснёт  */
-			unique_lock<mutex> l(ptr->mutex_);
-			ptr->sleep_cond_.notify_all();
-		}
+		/* Блокировкой гарантируем, что не окажемся между
+			if (!finish()) и wait(). Иначе мы "разбудим" ещё
+			не спящий поток, но который тут же заснёт  */
+		unique_lock<mutex> l(ptr->mutex_);
+		ptr->sleep_cond_.notify_all();
 	}
 
+	/* Разбудить поток. Блокировка обеспечена вызывающей стороной */
+	void wake_up(worker::ptr ptr, unique_lock<mutex> &lock)
+	{
+		/* Переданная блокировка не используется, параметр лишь
+			напоминает, что она должна быть создана самостоятельно */
+		ptr->sleep_cond_.notify_all();
+	}
+
+    /* "Увольняем" работника */
 	inline void dismiss(worker::ptr &ptr)
 	{
 		ptr.reset();
 	}
 
+    /* Состояние worker'ов. Единственное место, где используются
+    	названия, данные worker'ам при создании */
 	void workers_state(std::vector<std::string> &v)
 	{
 		v.clear();
@@ -369,7 +373,7 @@ public:
 
 		/* Будим все потоки */
 		for_each(employer_workers_.begin(), employer_workers_.end(),
-			boost::bind(&employer::wake_up, this, _1, true));
+			boost::bind(&employer::wake_up, this, _1));
 
 		/* Вызываем обработчики завершения */
 		for_each(employer_workers_.begin(), employer_workers_.end(),
