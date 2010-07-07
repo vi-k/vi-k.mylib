@@ -42,6 +42,7 @@
 #define SS_EXCEPTION(s) throw std::exception(((stringstream*)&(s))->str().c_str())
 #endif
 
+#include <cstddef> /* std::size_t */
 #include <ostream>
 #include <list>
 #include <boost/unordered_map.hpp>
@@ -326,7 +327,7 @@ public:
 		{ return list_.back(); }
 
 
-	inline list_type::size_type size()
+	inline std::size_t size()
 		{ return list_.size(); }
 
 	inline bool empty()
