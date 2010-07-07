@@ -6,6 +6,7 @@
 #define MY_STOPWATCH_H
 
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <list>
 
@@ -195,7 +196,7 @@ public:
 	template<class Char>
 	std::basic_string<Char> to_str()
 	{
-		basic_ostringstream<Char> out;
+		std::basic_ostringstream<Char> out;
 		out << *this;
 		return out.str();
 	}
