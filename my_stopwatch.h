@@ -68,14 +68,13 @@ public:
     /* Старт (после паузы) */
 	inline void start()
 	{
-		start_ = posix_time::microsec_clock::universal_time();
+		start_ = my::time::utc_now();
 	}
 
     /* Остановка (пауза) */
 	inline void finish()
 	{
-		posix_time::time_duration time
-			= posix_time::microsec_clock::universal_time() - start_;
+		posix_time::time_duration time = my::time::utc_now() - start_;
 
 		if (time < min_ || count_ == 0)
 			min_ = time;
