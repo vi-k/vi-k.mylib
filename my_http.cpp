@@ -235,7 +235,7 @@ void message::save(const wstring &filename)
 
 	ofstream fs(filename.c_str(), ios::binary);
 	if (fs)
-		fs << body;
+		fs << body << flush;
 
 	if (!fs)
 		throw my::exception(L"Не удалось сохранить данные в файл")
