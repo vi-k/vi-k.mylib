@@ -14,7 +14,7 @@
 				<Option compiler="msvc8" />
 				<Option createDefFile="1" />
 				<Compiler>
-					<Add option="/MTd" />
+					<Add option="/MDd" />
 					<Add option="/W3" />
 					<Add option="/Zi" />
 					<Add option="/D_DEBUG" />
@@ -33,7 +33,7 @@
 				<Option compiler="msvc8" />
 				<Option createDefFile="1" />
 				<Compiler>
-					<Add option="/MT" />
+					<Add option="/MD" />
 					<Add option="/Ox" />
 					<Add option="/W3" />
 					<Add option="/DNDEBUG" />
@@ -44,9 +44,6 @@
 				</Linker>
 			</Target>
 		</Build>
-		<Compiler>
-			<Add option="/Zc:wchar_t" />
-		</Compiler>
 		<Unit filename="my_debug.h" />
 		<Unit filename="my_employer.h" />
 		<Unit filename="my_exception.h" />
