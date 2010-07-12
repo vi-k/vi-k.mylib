@@ -67,6 +67,7 @@ public:
 private:
 	typedef boost::unordered_map<key_type, iterator> map_type;
 	typedef typename map_type::iterator map_iterator;
+	typedef typename map_type::const_iterator map_const_iterator;
 
 private:
 
@@ -181,6 +182,13 @@ public:
 	inline iterator find(key_type const& key)
 	{
 		map_iterator map_iter = map_.find(key);
+		return (map_iter == map_.end() ? list_.end() : map_iter->second);
+	}
+
+	/* Поиск по ключу */
+	inline const_iterator find(key_type const& key) const
+	{
+		map_const_iterator map_iter = map_.find(key);
 		return (map_iter == map_.end() ? list_.end() : map_iter->second);
 	}
 
