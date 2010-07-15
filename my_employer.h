@@ -1,20 +1,20 @@
 ﻿/*
 	Класс employer - "работодатель".
-	
+
 	Цель: обеспечение контроля и безопасного завершения
 		деятельности "работников" (worker'ов) класса.
 
 	Описание:
-		
+
 	Под "работниками" подразумеваются потоки, асинхронные операции, таймеры
 	и т.п., т.е. самостоятельно живущие программные конструкции. При
 	проектировании класса с такими "работниками" есть определённая трудность
 	обеспечить нормальное завершение работы и дождаться, когда они
 	действительно прекратят свою работу.
-	
+
 	Далее по тексту	"работников" буду называть worker'ами.
 
-	
+
 	* Уведомление о завершении работы *
 
 	Обычно уведомление worker'ов происходит через установку флага, который,
@@ -24,7 +24,7 @@
 	обеспечивается функцией lets_finish ("пора заканчивать"). Проверка флага
 	- функцией finish (if (finish()) .., while (!finish()) ..).
 
-	
+
 	* Ожидание завершения работы *
 
 	Пока worker получит уведомление и завершит работу, объект нашего
@@ -38,7 +38,7 @@
 	worker'ы не перестанут существовать (и, тем самым, не освободят
 	мьютекс), employer будет спать.
 
-	
+
 	* Создание worker'а *
 
 	Создаётся worker функцией new_worker(). Функция возвращает "умный"
@@ -54,7 +54,7 @@
 	Поток:
 
 		Создание потока:
-		
+
 		boost::thread( boost::bind( &my_class::thread_proc,
 			this, new_worker("my_thread")) );
 
@@ -68,7 +68,7 @@
 
 		boost::asio::async_read_until( socket, buf, "\r\n",
 			boost::bind(&my_class::handle_read, this, new_worker("async_read")) );
-	
+
 		Обработчик операции:
 
 		void my_class::handle_read(my::worker::ptr this_worker);
@@ -78,7 +78,7 @@
 		boost::asio::async_read_until( socket, buf, "\r\n",
 			boost::bind(&my_class::handle_read, this, this_worker) );
 
-	
+
 	Но, в принципе, все эти вещи достаточно легко реализуются простыми
 	средствами, и если бы только это было нужно, то создавать employer
 	было бы нецелесообразно. Но есть более интересные вещи.
@@ -86,7 +86,7 @@
 
 	* Интересные вещи *
 
-	
+
 	* Спящие потоки *
 
 	Некоторым потокам нет необходимости постоянно работать. Т.е. они
@@ -116,8 +116,8 @@
 		dismiss(another_sleeping_thread);
 		...
 		wait_for_finish(); // Ждём завершения
-	
-	
+
+
 	* Windows Messages и dead_lock'и *
 
 	Особенностью при разработке является завершение работы потока, так или
@@ -150,13 +150,13 @@
 	простого if (!finish()) timer.async_wait(..) будет недостаточно, т.к.
 	есть вероятность, что проверка if (!finish()) выполнится до lets_finish(),
 	а timer.async_wait() уже после check_for_finish().
-	
+
 	В любом случае, в конце деструктора всё же стоит поставить
 	wait_for_finish(). В этом случае, если обработчик таймера "правильно"
 	сделан и проверяет finish(), то мы зависнем до первой сработки таймера.
 	А это лучше, чем получить undefined behavior из-за обращения
 	к разрушенному объекту.
-	
+
 	Деструктор employer вызывает wait_for_finish(), но где уверенность,
 	что ваш "недобитый" worker не попытается обратиться к уже разрушенным
 	в деструкторе переменным/структурам/объектам вашего класса?
@@ -169,7 +169,7 @@
 	сработает таймер или пока не поступят данные на вход в случае
 	синхронного/асинхронного чтения). Необходимы дополнительные действия.
 	Для таймера - вызов timer.cancel(), для сокетов - socket.close().
-	
+
 	При создании worker'а в функции new_worker() можно через boost::bind
 	задать такой "завершитель".
 
@@ -229,7 +229,7 @@ public:
 	typedef shared_ptr<class worker> ptr;
 
 private:
-	shared_lock<shared_mutex> lock_;
+	my::shared_locker locker_;
 	std::string name_;
 	mutex mutex_;
 	condition_variable sleep_cond_;
@@ -244,14 +244,14 @@ private:
 public:
 	worker(shared_mutex &mutex, const std::string &name,
 		boost::function<void ()> on_finish)
-		: lock_(mutex)
+		: locker_ MYLOCKER_PARAMS(mutex, 5, CURLINE)
 		, name_(name)
 		, on_finish_(on_finish)
 	{
 	}
 
-	inline unique_lock<mutex> create_lock()
-		{ return unique_lock<mutex>(mutex_); }
+	inline mutex& get_mutex()
+        { return mutex_; }
 };
 
 /* Класс "работодателя" */
@@ -280,9 +280,9 @@ public:
 		boost::function<void ()> on_finish = boost::function<void ()>())
 	{
 		worker::ptr ptr( new worker(employer_mutex_, name, on_finish) );
-		
+
 		employer_workers_.push_back(ptr);
-		
+
 		return ptr;
 	}
 
@@ -291,8 +291,22 @@ public:
 	{
 		/* Блокировкой гарантируем атомарность операций:
 			сравнения и засыпания */
-		unique_lock<mutex> lock(ptr->mutex_);
-			
+        my::locker locker MYLOCKER_PARAMS(ptr->mutex_, 5, CURLINE);
+
+		if (!employer_finish_)
+		{
+			ptr->sleep_cond_.wait(locker);
+			return true;
+		}
+
+		return false;
+	}
+
+	/* Усыпить поток (но только, если не было команды завершить работу).
+		Блокировка обеспечена вызывающей стороной */
+	template<typename Lock>
+	bool sleep(worker::ptr ptr, Lock &lock)
+	{
 		if (!employer_finish_)
 		{
 			ptr->sleep_cond_.wait(lock);
@@ -302,13 +316,30 @@ public:
 		return false;
 	}
 
-	/* Усыпить поток (но только, если не было команды завершить работу).
-		Блокировка обеспечена вызывающей стороной */
-	bool sleep(worker::ptr ptr, unique_lock<mutex> &lock)
+    /* Усыпляем на время */
+	template<typename DurationType>
+	bool timed_sleep(worker::ptr ptr, DurationType rel_time)
+	{
+		/* Блокировкой гарантируем атомарность операций:
+			сравнения и засыпания */
+        my::locker locker MYLOCKER_PARAMS(ptr->mutex_, 5, CURLINE);
+
+		if (!employer_finish_)
+		{
+			ptr->sleep_cond_.timed_wait(locker, rel_time);
+			return true;
+		}
+
+		return false;
+	}
+
+    /* Усыпляем на время */
+	template<typename Lock, typename DurationType>
+	bool timed_sleep(worker::ptr ptr, Lock &lock, DurationType rel_time)
 	{
 		if (!employer_finish_)
 		{
-			ptr->sleep_cond_.wait(lock);
+			ptr->sleep_cond_.timed_wait(lock, rel_time);
 			return true;
 		}
 
@@ -321,12 +352,13 @@ public:
 		/* Блокировкой гарантируем, что не окажемся между
 			if (!finish()) и wait(). Иначе мы "разбудим" ещё
 			не спящий поток, но который тут же заснёт  */
-		unique_lock<mutex> l(ptr->mutex_);
+		my::locker locker MYLOCKER_PARAMS(ptr->mutex_, 5, CURLINE);
 		ptr->sleep_cond_.notify_all();
 	}
 
 	/* Разбудить поток. Блокировка обеспечена вызывающей стороной */
-	void wake_up(worker::ptr ptr, unique_lock<mutex> &lock)
+	template<typename Lock>
+	void wake_up(worker::ptr ptr, Lock &lock)
 	{
 		/* Переданная блокировка не используется, параметр лишь
 			напоминает, что она должна быть создана самостоятельно */
@@ -356,11 +388,11 @@ public:
 					: count == 1 ? "finished"
 					: "works")
 				<< " (use: " << iter->use_count() << ")";
-			
+
 			v.push_back(out.str());
 		}
 	}
-	
+
 	/* Проверка флага завершения работы */
 	inline bool finish()
 		{ return employer_finish_; }
@@ -391,7 +423,7 @@ public:
 			if ( !iter->unique() )
 				count++;
 		}
-		
+
 		return count == 0;
 	}
 
@@ -399,7 +431,7 @@ public:
 	void wait_for_finish()
 	{
 		employer_workers_.clear();
-		unique_lock<shared_mutex> l(employer_mutex_);
+		my::not_shared_locker locker MYLOCKER_PARAMS(employer_mutex_, 5, CURLINE);
 	}
 };
 
