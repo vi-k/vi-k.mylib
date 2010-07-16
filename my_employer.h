@@ -216,8 +216,10 @@
 #include <boost/function.hpp>
 
 #include "my_ptr.h"
+#include "my_time.h"
 #include "my_thread.h"
 #include "my_curline.h"
+#include "my_exception.h"
 
 namespace my
 {
@@ -231,7 +233,7 @@ public:
 
 private:
 	my::shared_locker locker_;
-	std::string name_;
+	std::wstring name_;
 	mutex mutex_;
 	condition_variable sleep_cond_;
 	boost::function<void ()> on_finish_;
@@ -243,7 +245,7 @@ private:
 	}
 
 public:
-	worker(shared_mutex &mutex, const std::string &name,
+	worker(shared_mutex &mutex, const std::wstring &name,
 		boost::function<void ()> on_finish)
 		: locker_( MYLOCKERPARAMS(mutex, 5, MYCURLINE) )
 		, name_(name)
@@ -277,7 +279,7 @@ public:
 
 	/* Создание нового "работника". Возвращается указатель на работника.
 		Напрямую к работнику стучаться не надо */
-	worker::ptr new_worker(const std::string &name = std::string(),
+	worker::ptr new_worker(const std::wstring &name = std::wstring(),
 		boost::function<void ()> on_finish = boost::function<void ()>())
 	{
 		worker::ptr ptr( new worker(employer_mutex_, name, on_finish) );
@@ -374,21 +376,21 @@ public:
 
     /* Состояние worker'ов. Единственное место, где используются
     	названия, данные worker'ам при создании */
-	void workers_state(std::vector<std::string> &v)
+	void workers_state(std::vector<std::wstring> &v)
 	{
 		v.clear();
 
 		for (workers_list::iterator iter = employer_workers_.begin();
 			iter != employer_workers_.end(); ++iter)
 		{
-			std::ostringstream out;
+			std::wostringstream out;
 			long count = iter->use_count();
 
-			out << (*iter)->name_ << " - "
-				<< (count == 0 ? "???"
-					: count == 1 ? "finished"
-					: "works")
-				<< " (use: " << iter->use_count() << ")";
+			out << (*iter)->name_ << L" - "
+				<< (count == 0 ? L"???"
+					: count == 1 ? L"finished"
+					: L"works")
+				<< L" (use: " << iter->use_count() << L')';
 
 			v.push_back(out.str());
 		}
@@ -427,6 +429,38 @@ public:
 		}
 
 		return count == 0;
+	}
+
+	/* Отладка - поиск зависших */
+	void debug_wait_for_finish(const std::wstring &info,
+		const posix_time::time_duration &timeout)
+	{
+		posix_time::ptime start_finish = my::time::utc_now();
+		while (!check_for_finish())
+		{
+			if (my::time::utc_now() - start_finish < timeout)
+			{
+				my::exception e(L"my::employer: timeout");
+
+				e << my::param(L"info", info)
+					<< my::param(L"timeout", my::time::to_wstring(timeout));
+
+				for (workers_list::iterator iter = employer_workers_.begin();
+					iter != employer_workers_.end(); ++iter)
+				{
+					std::wostringstream out;
+					long count = iter->use_count();
+
+					out << (count == 0 ? L"???"
+							: count == 1 ? L"finished" : L"works")
+						<< L" (use_count: " << iter->use_count() << L')';
+
+					e << my::param((*iter)->name_, out.str());
+				}
+
+				throw e;
+			}
+		}
 	}
 
 	/* Ожидаем, когда все "работники" завершат работу */

@@ -1,7 +1,7 @@
 ﻿/*
 	Смысл всех этих самописных функций преобразования в том, что
 	стандартные функции из boost::date_time грандиозно медленны
-	
+
 	Тест (преобразование 1000 строк, avg - среднее время):
 
 	1) my::time::to_duration: avg=00:00:00.000250
@@ -161,11 +161,11 @@ std::size_t put(Char *buf, std::size_t buf_sz,
 		case date_time::neg_infin:
 			ptr += my::str::put(ptr, end - ptr, neg_infinity);
 			break;
-		
+
 		case date_time::pos_infin:
 			ptr += my::str::put(ptr, end - ptr, pos_infinity);
 			break;
-		
+
 		default:
 			ptr += my::str::put(ptr, end - ptr, not_special);
 	}
@@ -246,43 +246,6 @@ std::size_t put(Char *buf, std::size_t buf_sz,
 	return ptr - buf;
 }
 
-/* Преобразование даты/времени (boost::posix_time::ptime) в строку */
-template<class Char>
-std::size_t put(Char *buf, std::size_t buf_sz,
-	const posix_time::ptime &time, const Char *format = 0)
-{
-	if (time.is_special())
-		return put(buf, buf_sz, my::time::as_special(time));
-
-	Char *ptr = buf;
-	Char *end = buf + buf_sz;
-
-	if (!format)
-	{
-		ptr += put(ptr, end - ptr, time.date());
-		ptr += my::str::put(ptr, end - ptr, Char(' '));
-		ptr += put(ptr, end - ptr, time.time_of_day());
-	}
-	else if (buf_sz)
-	{
-		/* Сложный момент, как из двух собрать одно с помощью
-			одного формата? */
-
-		/* Используя формат, выводим дату. Формат для времени
-			сохраняется в выходном буфере */
-		ptr += put(ptr, end - ptr, time.date(), format);
-
-        /* Делаем копию полученной строки */
-        std::basic_string<Char> new_format(buf);
-
-		/* Используем скопированную строку как формат */
-		ptr = buf;
-		ptr += put(ptr, end - ptr, time.time_of_day(), new_format.c_str());
-	}
-
-	return ptr - buf;
-}
-
 /* Преобразование длительности (boost::posix_time::time_duration) в строку */
 template<class Char>
 std::size_t put(Char *buf, std::size_t buf_sz,
@@ -290,7 +253,7 @@ std::size_t put(Char *buf, std::size_t buf_sz,
 {
 	if (dur.is_special())
 		return put(buf, buf_sz, my::time::as_special(dur));
-	
+
 	Char *ptr = buf;
 	Char *end = buf + buf_sz;
 
@@ -302,7 +265,7 @@ std::size_t put(Char *buf, std::size_t buf_sz,
 		negative = true;
 		ticks = -ticks;
 	}
-		
+
 	long long total_seconds = ticks / dur.ticks_per_second();
 	long long hours = total_seconds / 3600;
 
@@ -311,7 +274,7 @@ std::size_t put(Char *buf, std::size_t buf_sz,
 	long seconds = static_cast<long>(total_seconds - hours * 3600);
 	long minutes = seconds / 60;
 	seconds -= minutes * 60;
-		
+
 	if (!format)
 	{
 		if (negative)
@@ -405,6 +368,42 @@ std::size_t put(Char *buf, std::size_t buf_sz,
 	return ptr - buf;
 }
 
+/* Преобразование даты/времени (boost::posix_time::ptime) в строку */
+template<class Char>
+std::size_t put(Char *buf, std::size_t buf_sz,
+	const posix_time::ptime &time, const Char *format = 0)
+{
+	if (time.is_special())
+		return put(buf, buf_sz, my::time::as_special(time));
+
+	Char *ptr = buf;
+	Char *end = buf + buf_sz;
+
+	if (!format)
+	{
+		ptr += put(ptr, end - ptr, time.date());
+		ptr += my::str::put(ptr, end - ptr, Char(' '));
+		ptr += put(ptr, end - ptr, time.time_of_day());
+	}
+	else if (buf_sz)
+	{
+		/* Сложный момент, как из двух собрать одно с помощью
+			одного формата? */
+
+		/* Используя формат, выводим дату. Формат для времени
+			сохраняется в выходном буфере */
+		ptr += put(ptr, end - ptr, time.date(), format);
+
+        /* Делаем копию полученной строки */
+        std::basic_string<Char> new_format(buf);
+
+		/* Используем скопированную строку как формат */
+		ptr = buf;
+		ptr += put(ptr, end - ptr, time.time_of_day(), new_format.c_str());
+	}
+
+	return ptr - buf;
+}
 
 template<class Char,class Time>
 inline std::basic_string<Char> to_str(const Time &t,
@@ -412,16 +411,16 @@ inline std::basic_string<Char> to_str(const Time &t,
 {
 	Char buf[64];
 	std::size_t n;
-	
+
 	n = my::time::put(buf, sizeof(buf) / sizeof(*buf), t, format);
-	
+
 	if (n < sizeof(buf) / sizeof(*buf) - 1)
 		return std::basic_string<Char>(buf);
 
     /* Если статического буфера не хватило (из-за формата)
     	- выделяем динамический. И повторно запускаем put().
     	Это не есть хорошо, но пока сойдёт */
-	
+
 	if (format)
 		//n = std::max(n, my::str::length(format));
 	{
@@ -617,14 +616,14 @@ std::size_t get(const Char *str, std::size_t str_sz,
 
 	/* Минуты (могут отсутствовать) */
 	else if (ptr != end && *ptr == ':')
-	{	
+	{
 		ptr++;
 		ptr += (n = my::num::get(ptr, end - ptr, m));
 
 		/* Но если есть разделитель, дожно быть и число */
 		if (n == 0 || m >= 60)
 			ok = false;
-		
+
 		/* Секунды (могут отсутствовать) */
 		else if (ptr != end && *ptr == ':')
 		{
@@ -650,11 +649,11 @@ std::size_t get(const Char *str, std::size_t str_sz,
 					/* Учитываем, что значение после точки - это
 						ДОЛИ секунды! Т.е. 00:00:00.12 не должно
 						превратиться в 00:00:00.000012 */
-					
+
 					/* a - кол-во недостающих нулей (a>0) или
 						избыток цифр (a<0) */
 					long a = dur.num_fractional_digits() - n;
-					
+
 					/* Округляем при необходимости:
 						00:00:00.123456789 -> 00:00:00.123457 */
 					if (a < 0)

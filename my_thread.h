@@ -9,6 +9,12 @@
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/locks.hpp>
 
+using boost::mutex;
+using boost::shared_mutex;
+using boost::recursive_mutex;
+typedef boost::condition_variable_any condition_variable;
+
+
 #ifdef MY_LOCK_INSPECTOR
 #include <string>
 #include <map>
@@ -17,17 +23,12 @@
 #include "my_exception.h"
 #endif
 
-using boost::mutex;
-using boost::shared_mutex;
-using boost::recursive_mutex;
-
-typedef boost::condition_variable_any condition_variable;
-
 namespace my {
 
 #ifndef MY_LOCK_INSPECTOR
 
 #define MYLOCKERPARAMS(m,c,i) m
+#define MYLOCKINSPECTOR_INIT()
 
 template<typename Mutex, typename Lock>
 class locker_templ
@@ -52,6 +53,7 @@ public:
 #else /* #ifndef MY_LOCK_INSPECTOR */
 
 #define MYLOCKERPARAMS(m,c,i) m,c,i
+#define MYLOCKINSPECTOR_INIT() my::lock_inspector my::g_lock_inspector;
 
 struct lock_info
 {
@@ -86,6 +88,8 @@ private:
 	boost::thread thread_;
 	bool finish_;
 
+	std::ofstream log_;
+
 	static int get_unique_id()
 	{
 		static int id = 0;
@@ -95,6 +99,7 @@ private:
 public:
 	lock_inspector()
         : finish_(false)
+        , log_("lock.log")
 	{
 		thread_ = boost::thread( boost::bind(
 			&lock_inspector::inspector_proc, this) );
@@ -105,6 +110,9 @@ public:
 		finish_ = true;
 		thread_.join();
 	}
+
+	inline std::ofstream& log()
+		{ return log_; }
 
 	void inspector_proc()
 	{
@@ -173,6 +181,7 @@ public:
 
 	void set_state(int locker_id, lock_info::lock_state state)
 	{
+	    /*-
 	    mutex::scoped_lock l(mutex_);
 
 	    thread_locks &tl = locks_[ boost::this_thread::get_id() ];
@@ -186,10 +195,12 @@ public:
 	    		<< my::param(L"state", state_str(state));
 
 		iter->second.state = state;
+        -*/
 	}
 
 	void remove(int locker_id)
 	{
+	    /*-
 	    mutex::scoped_lock l(mutex_);
 
 	    thread_locks &tl = locks_[ boost::this_thread::get_id() ];
@@ -200,6 +211,7 @@ public:
 	    		<< my::param(L"locker_id", locker_id);
 
 		tl.erase(locker_id);
+        -*/
 	}
 };
 
@@ -215,29 +227,36 @@ private:
 public:
 
 	locker_templ(Mutex &m, int max_count, const std::string &info)
-		: lock_(m, boost::defer_lock)
+		: lock_(m)
+		//: lock_(m, boost::defer_lock)
 	{
 		id_ = g_lock_inspector.add(max_count, info);
-		lock();
+		g_lock_inspector.log() << "#" << id_ << " locked " << info << std::flush;
+		//lock();
 	}
 
 	~locker_templ()
 	{
-		unlock();
+		//unlock();
+		g_lock_inspector.log() << "#" << id_ << " unlocking" << std::flush;
 	}
 
 	void lock()
 	{
-		g_lock_inspector.set_state(id_, my::lock_info::locking);
+		//g_lock_inspector.set_state(id_, my::lock_info::locking);
+		g_lock_inspector.log() << "#" << id_ << " locking" << std::flush;
 		lock_.lock();
-		g_lock_inspector.set_state(id_, my::lock_info::locked);
+		g_lock_inspector.log() << "#" << id_ << " locked" << std::flush;
+		//g_lock_inspector.set_state(id_, my::lock_info::locked);
 	}
 
 	void unlock()
 	{
-		g_lock_inspector.set_state(id_, my::lock_info::unlocking);
+		//g_lock_inspector.set_state(id_, my::lock_info::unlocking);
+		g_lock_inspector.log() << "#" << id_ << " unlocking" << std::flush;
 		lock_.unlock();
-		g_lock_inspector.remove(id_);
+		g_lock_inspector.log() << "#" << id_ << " unlocked" << std::flush;
+		//g_lock_inspector.remove(id_);
 	}
 };
 
