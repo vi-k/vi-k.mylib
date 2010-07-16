@@ -8,7 +8,7 @@
 		boost::unordered_map (далее map) - для быстрого доступа к значению
 		по уникальному ключу (key). Соответственно, для класса Key
 		должна быть определена функция hash_value (см. boost::hash).
-		
+
 		std::list (далее list) - для хранения значений в порядке последнего
 		использования.
 
@@ -25,7 +25,7 @@
 		итератор, возвращают итератор именно list'а. Map для пользователя
 		не доступен. Mru::list, также, хранит ограничитель на кол-во
 		элементов в списке (max_items), но сам его никак не использует.
-		
+
 		За добавление/удаление/ограничение элементов в списке отвечает (!)
 		элемент list'а - его конструктор и деструктор. Это, с одной стороны,
 		вынуждает хранить в каждом из них указатель на mru::list. Но,
@@ -54,18 +54,18 @@ class list
 {
 private:
 	class item;
-	
+
 public:
-	typedef typename item item_type;
-	typedef typename Key key_type;
-	typedef typename Value value_type;
-	typedef std::list<item> list_type;
+	typedef typename list::item item_type;
+	typedef Key key_type;
+	typedef Value value_type;
+	typedef typename std::list<item> list_type;
 	typedef typename list_type::iterator iterator;
 	typedef typename list_type::const_iterator const_iterator;
 	typedef typename list_type::reverse_iterator reverse_iterator;
 	typedef typename list_type::const_reverse_iterator const_reverse_iterator;
 private:
-	typedef boost::unordered_map<key_type, iterator> map_type;
+	typedef typename boost::unordered_map<key_type, iterator> map_type;
 	typedef typename map_type::iterator map_iterator;
 	typedef typename map_type::const_iterator map_const_iterator;
 
@@ -138,8 +138,8 @@ private:
 			tmp_list_.splice(tmp_list_.begin(), list_, *p_list_iter);
 			list_.splice(where, tmp_list_);
 
-			/* После splice все ранее определённые итераторы 
-				и ссылки на элементы становятся invalid'ными 
+			/* После splice все ранее определённые итераторы
+				и ссылки на элементы становятся invalid'ными
 				(Only iterators or references that designate
 				spliced elements become invalid) */
 			*p_list_iter = --where;
@@ -167,7 +167,7 @@ public:
 
 		/* Добавляем в map */
 		std::pair<map_iterator, bool> p
-			= map_.insert(map_type::value_type(key, list_iter));
+			= map_.insert(typename map_type::value_type(key, list_iter));
 
 		list_iter->mapped_ = true;
 
@@ -280,20 +280,20 @@ public:
 	inline void clear()
 		{ list_.clear(); }
 
-	
+
 	inline iterator begin()
 		{ return list_.begin(); }
 
 	inline const_iterator begin() const
 		{ return list_.begin(); }
-	
+
 	inline const_iterator cbegin() const
 		{ return list_.cbegin(); }
 
 
 	inline iterator end()
 		{ return list_.end(); }
-	
+
 	inline const_iterator end() const
 		{ return list_.end(); }
 
@@ -310,7 +310,7 @@ public:
 	inline const_reverse_iterator crbegin() const
 		{ return list_.crbegin(); }
 
-	
+
 	inline reverse_iterator rend()
 		{ return list_.rend(); }
 

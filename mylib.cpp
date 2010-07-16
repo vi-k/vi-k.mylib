@@ -1,12 +1,6 @@
-﻿#include "my_http.cpp"
-#include "my_inet.cpp"
-#include "my_num.cpp"
-#include "my_punycode.cpp"
-#include "my_str.cpp"
-#include "my_time.cpp"
-#include "my_utf8.cpp"
-#include "my_xml.cpp"
+﻿#define MY_LOCK_INSPECTOR /* Для проверки my::lock_inspector в my_thread.h */
 
+/* h */
 #include "my_debug.h"
 #include "my_employer.h"
 #include "my_exception.h"
@@ -27,3 +21,13 @@
 #include "my_time.h"
 #include "my_utf8.h"
 #include "my_xml.h"
+
+/* cpp */
+#include "my_http.cpp"
+#include "my_inet.cpp"
+#include "my_num.cpp"
+#include "my_punycode.cpp"
+#include "my_str.cpp"
+#include "my_time.cpp"
+#include "my_utf8.cpp"
+#include "my_xml.cpp"

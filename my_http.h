@@ -79,8 +79,8 @@ public:
 	void read_reply(tcp::socket &socket);
 
 	/* Отправка запроса и получение ответа */
-	void reply::get(tcp::socket &socket,
-		const std::string &request, bool do_read_body = true);
+	void get(tcp::socket &socket, const std::string &request,
+		bool do_read_body = true);
 };
 
 class request : public message

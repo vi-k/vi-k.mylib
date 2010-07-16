@@ -47,8 +47,8 @@ private:
 public:
 
 	stopwatch(int show = show_all)
-		: count_(0)
-		, show_(show)
+		: show_(show)
+		, count_(0)
 	{
 		start();
 	}
@@ -122,7 +122,7 @@ public:
 		return full_total;
 	}
 
-	
+
     /* Количество измеренных периодов */
 	inline int count() const
 		{ return count_; }
@@ -190,7 +190,7 @@ public:
 		}
 
 		return out;
-	}	
+	}
 
 	template<class Char>
 	std::basic_string<Char> to_str()

@@ -57,6 +57,8 @@ protected:
 				message( my::str::to_wstring(e.what()) );
 		}
 
+		~exception() throw() {}
+
 		std::wstring message() const throw()
 		{
 			std::wostringstream out;

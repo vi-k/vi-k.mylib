@@ -1,6 +1,6 @@
 ﻿/*
 	Быстрые функции преобразования чисел в строки и из строки
-	
+
 	В строку - свой алгоритм (первый придуманный алгоритм
 		оказался быстрее itoa и, даже (!), Boost.Spirit.Karma (после
 		создания его безопасной версии стал таким как последний).
@@ -14,10 +14,10 @@
 	----------------------------------------
 
 	Функции преобразования числа в строку.
-	
+
 	Поддерживаемые типы: char, short, int, long, long long
 		и их беззнаковые версии.
-		
+
 		----------
 
 		template<class Char>
@@ -29,7 +29,7 @@
 
 			Преобразование числа value в буфер buf размером buf_sz.
 			decimals - минимальное кол-во цифр.
-			
+
 			Возврат: размер полученной строки (без учёта
 				завершающего нуля).
 
@@ -57,7 +57,7 @@
 
 	Поддерживаемые типы: char, short, int, long, long long,
 	их беззнаковые версии, float, double, long double.
-		
+
 		Используемые типы и их представление в названиях функций:
 			char      -> char
 			uchar     -> unsigned char
@@ -124,7 +124,7 @@
 			преобразования число в res не меняется. В первом варианте,
 			если размер строки не задан (== -1), он рассчитывается
 			автоматически.
-			
+
 			Возврат: успех преобразования, в res - полученное значение.
 */
 
@@ -153,7 +153,7 @@ namespace my { namespace num {
 	Ради производительности имеет ограничение - используется
 	временный буфер размером NUM_TO_STR_BUF_SIZE байт
 	(128 бит требует 39 байт).
-	
+
 	Напрямую использовать не рекомендуется, т.к. шаблон принимает
 	любые типы и результат такого действия не предсказуем.
 */
@@ -189,8 +189,8 @@ std::size_t put_signed(Char *buf, std::size_t buf_sz,
 	/* Заполняем выходную строку. Отдельно, если не входим
 		в ограничение размера (###), отдельно - если входим */
 	Char *ptr = buf;
-	Char *end = buf + buf_sz;
-	
+	//Char *end = buf + buf_sz;
+
 	std::size_t tmp_sz = tmp_ptr - tmp;
 	std::size_t zero_count = (decimals > tmp_sz ? decimals - tmp_sz : 0);
 
@@ -203,7 +203,7 @@ std::size_t put_signed(Char *buf, std::size_t buf_sz,
    				*ptr++ = '#';
 
    			*ptr = 0;
-		}	
+		}
    	}
    	else
    	{
@@ -217,7 +217,7 @@ std::size_t put_signed(Char *buf, std::size_t buf_sz,
 		while (tmp_ptr != tmp)
    			*ptr++ = *--tmp_ptr;
 
-		*ptr = 0;   	
+		*ptr = 0;
    	}
 
 	return ptr - buf;
@@ -230,7 +230,7 @@ std::size_t put_signed(Char *buf, std::size_t buf_sz,
 	Ради производительности имеет ограничение - используется
 	временный буфер размером NUM_TO_STR_BUF_SIZE байт
 	(128 бит требует 39 байт).
-	
+
 	Напрямую использовать не рекомендуется, т.к. шаблон принимает
 	любые типы и результат такого действия не предсказуем.
 */
@@ -259,8 +259,8 @@ std::size_t put_unsigned(Char *buf, std::size_t buf_sz,
 	/* Заполняем выходную строку. Отдельно, если не входим
 		в ограничение размера (###), отдельно - если входим */
 	Char *ptr = buf;
-	Char *end = buf + buf_sz;
-	
+	//Char *end = buf + buf_sz;
+
 	std::size_t tmp_sz = tmp_ptr - tmp;
 	std::size_t zero_count = (decimals > tmp_sz ? decimals - tmp_sz : 0);
 
@@ -273,7 +273,7 @@ std::size_t put_unsigned(Char *buf, std::size_t buf_sz,
    				*ptr++ = '#';
 
    			*ptr = 0;
-		}	
+		}
    	}
    	else
    	{
@@ -284,7 +284,7 @@ std::size_t put_unsigned(Char *buf, std::size_t buf_sz,
 		while (tmp_ptr != tmp)
    			*ptr++ = *--tmp_ptr;
 
-		*ptr = 0;   	
+		*ptr = 0;
    	}
 
 	return ptr - buf;
@@ -299,8 +299,7 @@ template<class T, class Char>
 inline std::basic_string<Char> signed_to_str(T n, std::size_t decimals = 0)
 {
 	Char buf[NUM_TO_STR_BUF_SIZE];
-	std::size_t sz
-		= put_signed<T,Char>(buf, sizeof(buf) / sizeof(*buf), n, decimals);
+	put_signed<T,Char>(buf, sizeof(buf) / sizeof(*buf), n, decimals);
 	return std::basic_string<Char>(buf);
 }
 
@@ -308,8 +307,7 @@ template<class T, class Char>
 inline std::basic_string<Char> unsigned_to_str(T n, std::size_t decimals = 0)
 {
 	Char buf[NUM_TO_STR_BUF_SIZE];
-	std::size_t sz
-		= put_unsigned<T,Char>(buf, sizeof(buf) / sizeof(*buf), n, decimals);
+	put_unsigned<T,Char>(buf, sizeof(buf) / sizeof(*buf), n, decimals);
 	return std::basic_string<Char>(buf);
 }
 
