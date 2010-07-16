@@ -231,31 +231,31 @@ public:
 		//: lock_(m, boost::defer_lock)
 	{
 		id_ = g_lock_inspector.add(max_count, info);
-		g_lock_inspector.log() << "#" << id_ << " locked " << info << std::flush;
+		g_lock_inspector.log() << "#" << id_ << " locked " << info << "\n" << std::flush;
 		//lock();
 	}
 
 	~locker_templ()
 	{
 		//unlock();
-		g_lock_inspector.log() << "#" << id_ << " unlocking" << std::flush;
+		g_lock_inspector.log() << "#" << id_ << " unlocking\n" << std::flush;
 	}
 
 	void lock()
 	{
 		//g_lock_inspector.set_state(id_, my::lock_info::locking);
-		g_lock_inspector.log() << "#" << id_ << " locking" << std::flush;
+		g_lock_inspector.log() << "#" << id_ << " locking\n" << std::flush;
 		lock_.lock();
-		g_lock_inspector.log() << "#" << id_ << " locked" << std::flush;
+		g_lock_inspector.log() << "#" << id_ << " locked\n" << std::flush;
 		//g_lock_inspector.set_state(id_, my::lock_info::locked);
 	}
 
 	void unlock()
 	{
 		//g_lock_inspector.set_state(id_, my::lock_info::unlocking);
-		g_lock_inspector.log() << "#" << id_ << " unlocking" << std::flush;
+		g_lock_inspector.log() << "#" << id_ << " unlocking\n" << std::flush;
 		lock_.unlock();
-		g_lock_inspector.log() << "#" << id_ << " unlocked" << std::flush;
+		g_lock_inspector.log() << "#" << id_ << " unlocked\n" << std::flush;
 		//g_lock_inspector.remove(id_);
 	}
 };
