@@ -9,8 +9,6 @@
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/locks.hpp>
 
-#include <boost/current_function.hpp>
-
 #ifdef MY_LOCK_INSPECTOR
 #include <string>
 #include <map>
@@ -27,79 +25,33 @@ typedef boost::condition_variable_any condition_variable;
 
 namespace my {
 
+#ifndef MY_LOCK_INSPECTOR
+
+#define MYLOCKERPARAMS(m,c,i) m
+
 template<typename Mutex, typename Lock>
 class locker_templ
 {
 private:
 	Lock lock_;
 
-    #ifdef MY_LOCK_INSPECTOR
-	int id_;
-	#endif
-
 public:
-
-    #ifndef MY_LOCK_INSPECTOR
-
-    #define CURLINE()
-    #define MYLOCKER_PARAMS(m,c,i) (m)
 
 	locker_templ(Mutex &m)
 		: lock_(m) {}
 
 	~locker_templ() {}
 
-	void lock()
-	{
-		lock_.lock();
-	}
+	inline void lock()
+		{ lock_.lock(); }
 
-	void unlock()
-	{
-		lock_.unlock();
-	}
-
-	#else
-
-	#define CURLINE_(F,L,Fu) "File: " F ", line: " #L ", func: " Fu
-	#define CURLINE CURLINE_(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION)
-	#define MYLOCKER_PARAMS(m,c,i) (m,c,i)
-
-	locker_templ(Mutex &m, int max_count, const std::string &info)
-		: lock_(m, boost::defer_lock)
-		, id_( my::lock_inspector::get_unique_id() )
-	{
-		g_lock_inspector.add(id_, max_count, info);
-		lock();
-	}
-
-	~locker_templ()
-	{
-		unlock();
-	}
-
-	void lock()
-	{
-		g_lock_inspector.set_state(id_, my::lock_info::locking);
-		lock_.lock();
-		g_lock_inspector.set_state(id_, my::lock_info::locked);
-	}
-
-	void unlock()
-	{
-		g_lock_inspector.set_state(id_, my::lock_info::unlocking);
-		lock_.unlock();
-		g_lock_inspector.remove(id_);
-	}
-	#endif
+	inline void unlock()
+		{ lock_.unlock(); }
 };
 
-typedef locker_templ<mutex, boost::unique_lock<mutex> > locker;
-typedef locker_templ<recursive_mutex, boost::unique_lock<recursive_mutex> > recursive_locker;
-typedef locker_templ<shared_mutex, boost::unique_lock<shared_mutex> > not_shared_locker;
-typedef locker_templ<shared_mutex, boost::shared_lock<shared_mutex> > shared_locker;
+#else /* #ifndef MY_LOCK_INSPECTOR */
 
-#ifdef MY_LOCK_INSPECTOR
+#define MYLOCKERPARAMS(m,c,i) m,c,i
 
 struct lock_info
 {
@@ -133,6 +85,12 @@ private:
 	condition_variable sleep_cond_;
 	boost::thread thread_;
 	bool finish_;
+
+	static int get_unique_id()
+	{
+		static int id = 0;
+		return ++id;
+	}
 
 public:
 	lock_inspector()
@@ -176,12 +134,6 @@ public:
 		}
 	}
 
-	static int get_unique_id()
-	{
-		static int id = 0;
-		return ++id;
-	}
-
 	static std::wstring state_str(lock_info::lock_state state)
 	{
 		switch (state)
@@ -200,9 +152,11 @@ public:
 		}
 	}
 
-	void add(int locker_id, int max_count, const std::string &info)
+	int add(int max_count, const std::string &info)
 	{
 	    mutex::scoped_lock l(mutex_);
+
+	    int locker_id = get_unique_id();
 
 	    thread_locks &tl = locks_[ boost::this_thread::get_id() ];
 
@@ -213,6 +167,8 @@ public:
 	    		<< my::param(L"info", info.c_str());
 
 		tl[locker_id] = lock_info(max_count, info);
+
+		return locker_id;
 	}
 
 	void set_state(int locker_id, lock_info::lock_state state)
@@ -247,12 +203,51 @@ public:
 	}
 };
 
-#endif
+extern lock_inspector g_lock_inspector;
+
+template<typename Mutex, typename Lock>
+class locker_templ
+{
+private:
+	Lock lock_;
+	int id_;
+
+public:
+
+	locker_templ(Mutex &m, int max_count, const std::string &info)
+		: lock_(m, boost::defer_lock)
+	{
+		id_ = g_lock_inspector.add(max_count, info);
+		lock();
+	}
+
+	~locker_templ()
+	{
+		unlock();
+	}
+
+	void lock()
+	{
+		g_lock_inspector.set_state(id_, my::lock_info::locking);
+		lock_.lock();
+		g_lock_inspector.set_state(id_, my::lock_info::locked);
+	}
+
+	void unlock()
+	{
+		g_lock_inspector.set_state(id_, my::lock_info::unlocking);
+		lock_.unlock();
+		g_lock_inspector.remove(id_);
+	}
+};
+
+#endif /* #else | #ifndef MY_LOCK_INSPECTOR */
+
+typedef locker_templ<mutex, boost::unique_lock<mutex> > locker;
+typedef locker_templ<recursive_mutex, boost::unique_lock<recursive_mutex> > recursive_locker;
+typedef locker_templ<shared_mutex, boost::unique_lock<shared_mutex> > not_shared_locker;
+typedef locker_templ<shared_mutex, boost::shared_lock<shared_mutex> > shared_locker;
 
 }
-
-#ifdef MY_LOCK_INSPECTOR
-extern my::lock_inspector g_lock_inspector;
-#endif
 
 #endif

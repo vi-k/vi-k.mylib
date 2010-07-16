@@ -120,8 +120,8 @@ string percent_decode(const char *str, int len)
 		необходимо использовать unsigned char, поэтому оформляем
 		это дело отдельным правилом */
 	qi::rule<const char *, unsigned char()> char_r
-		= qi::char_ - '%'
-			| '%' >> qi::uint_parser<unsigned char, 16, 2, 2>();
+		= (qi::char_ - '%')
+			| ('%' >> qi::uint_parser<unsigned char, 16, 2, 2>());
 
 	if (len < 0)
 		len = my::str::length(str);
@@ -159,8 +159,8 @@ string percent_encode(const char *str,
 		char ch = *ptr_in++;
         /* Кодируются все специальные символы, все не ascii-символы (>127),
         	пробел и заказанные пользователем */
-		if (ch <= 32 || ch > 127 ||
-			escape_symbols && strchr(escape_symbols, ch))
+		if ( ch <= 32 || ch > 127 ||
+			(escape_symbols && strchr(escape_symbols, ch)) )
 		{
 			*ptr_out++ = '%';
 			*ptr_out++ = hex[ ((unsigned char)ch) >> 4];
@@ -233,7 +233,27 @@ void message::save(const wstring &filename)
 {
 	fs::create_directories( fs::wpath(filename).parent_path() );
 
-	ofstream fs(filename.c_str(), ios::binary);
+	FILE *file = _wfopen(filename.c_str(), L"wb");
+	if (!file)
+	{
+		throw my::exception(L"Не удалось открыть файл для записи")
+			<< my::param(L"file", filename)
+			<< my::param(L"error", strerror(errno));
+	}
+	else
+	{
+		size_t size = body.size();
+		size_t writed = fwrite(body.c_str(), 1, size, file);
+		fclose(file);
+
+		if (writed != size)
+			throw my::exception(L"Не удалось сохранить данные в файл")
+				<< my::param(L"file", filename)
+				<< my::param(L"error", strerror(errno));
+	}
+
+	/*-
+	ofstream fs(filename, ios::binary);
 	if (fs)
 		fs << body << flush;
 
@@ -241,6 +261,7 @@ void message::save(const wstring &filename)
 		throw my::exception(L"Не удалось сохранить данные в файл")
 			<< my::param(L"file", filename)
 			<< my::param(L"error", strerror(errno));
+	-*/
 }
 
 void reply::read_reply(tcp::socket &socket)

@@ -217,6 +217,7 @@
 
 #include "my_ptr.h"
 #include "my_thread.h"
+#include "my_curline.h"
 
 namespace my
 {
@@ -244,7 +245,7 @@ private:
 public:
 	worker(shared_mutex &mutex, const std::string &name,
 		boost::function<void ()> on_finish)
-		: locker_ MYLOCKER_PARAMS(mutex, 5, CURLINE)
+		: locker_( MYLOCKERPARAMS(mutex, 5, MYCURLINE) )
 		, name_(name)
 		, on_finish_(on_finish)
 	{
@@ -291,7 +292,7 @@ public:
 	{
 		/* Блокировкой гарантируем атомарность операций:
 			сравнения и засыпания */
-        my::locker locker MYLOCKER_PARAMS(ptr->mutex_, 5, CURLINE);
+        my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
 
 		if (!employer_finish_)
 		{
@@ -322,7 +323,7 @@ public:
 	{
 		/* Блокировкой гарантируем атомарность операций:
 			сравнения и засыпания */
-        my::locker locker MYLOCKER_PARAMS(ptr->mutex_, 5, CURLINE);
+        my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
 
 		if (!employer_finish_)
 		{
@@ -352,7 +353,7 @@ public:
 		/* Блокировкой гарантируем, что не окажемся между
 			if (!finish()) и wait(). Иначе мы "разбудим" ещё
 			не спящий поток, но который тут же заснёт  */
-		my::locker locker MYLOCKER_PARAMS(ptr->mutex_, 5, CURLINE);
+		my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
 		ptr->sleep_cond_.notify_all();
 	}
 
@@ -404,8 +405,9 @@ public:
 		employer_finish_ = true;
 
 		/* Будим все потоки */
+		void (employer::*fn)(worker::ptr) = &employer::wake_up;
 		for_each(employer_workers_.begin(), employer_workers_.end(),
-			boost::bind(&employer::wake_up, this, _1));
+			boost::bind(fn, this, _1));
 
 		/* Вызываем обработчики завершения */
 		for_each(employer_workers_.begin(), employer_workers_.end(),
@@ -431,7 +433,7 @@ public:
 	void wait_for_finish()
 	{
 		employer_workers_.clear();
-		my::not_shared_locker locker MYLOCKER_PARAMS(employer_mutex_, 5, CURLINE);
+		my::not_shared_locker locker( MYLOCKERPARAMS(employer_mutex_, 5, MYCURLINE) );
 	}
 };
 

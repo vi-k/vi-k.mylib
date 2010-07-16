@@ -32,7 +32,7 @@ wstring to_wstring(const char *str, int len)
 
 string escape(const char *ptr, int flags, int len)
 {
-	const char *esc[] = {
+	const char * esc[] = {
 		"\\0",   "\\x01", "\\x02", "\\x03",
 		"\\x04", "\\x05", "\\x06", "\\a",
 		"\\b",   "\\t",   "\\n",   "\\v",
@@ -45,7 +45,7 @@ string escape(const char *ptr, int flags, int len)
 	if (len < 0)
 		len = strlen(ptr);
 
-	const char *end = ptr + len; 
+	const char *end = ptr + len;
 
 	/* Сразу готовим буфер */
 	string out(len * 4, ' ');
@@ -56,8 +56,8 @@ string escape(const char *ptr, int flags, int len)
 
 	while (ptr != end)
 	{
-		char ch = *ptr++;
-		if (ch >= 0 && ch < 32)
+		unsigned char ch = *ptr++;
+		if (ch < 32)
 		{
 			const char *val = esc[ch];
 			while (*val)
@@ -66,8 +66,8 @@ string escape(const char *ptr, int flags, int len)
 		}
 		else
 		{
-			if (ch == '\"' && (flags & escape_double_quotes)
-				|| ch == '\'' && (flags & escape_single_quotes)
+			if ( (ch == '\"' && (flags & escape_double_quotes))
+				|| (ch == '\'' && (flags & escape_single_quotes))
 				|| ch == '\\')
 			{
 				*ptr_out++ = '\\';
@@ -105,7 +105,7 @@ wstring escape(const wchar_t *ptr, int flags, int len)
 	if (len < 0)
 		len = wcslen(ptr);
 
-	const wchar_t *end = ptr + len; 
+	const wchar_t *end = ptr + len;
 
 	/* Сразу готовим буфер */
 	wstring out(len * 4, L' ');
@@ -126,8 +126,8 @@ wstring escape(const wchar_t *ptr, int flags, int len)
 		}
 		else
 		{
-			if (ch == L'\"' && (flags & escape_double_quotes)
-				|| ch == L'\'' && (flags & escape_single_quotes)
+			if ( (ch == L'\"' && (flags & escape_double_quotes))
+				|| (ch == L'\'' && (flags & escape_single_quotes))
 				|| ch == L'\\')
 			{
 				*ptr_out++ = L'\\';

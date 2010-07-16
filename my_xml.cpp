@@ -8,11 +8,17 @@
 #include <fstream>
 using namespace std;
 
+#include <boost/config.hpp>
 #include <boost/optional.hpp>
 #include <boost/foreach.hpp>
 
 #include <boost/archive/codecvt_null.hpp>
+
+#if defined(BOOST_WINDOWS)
 #include <libs/serialization/src/codecvt_null.cpp>
+#else
+#include </usr/local/include/boost/libs/serialization/src/codecvt_null.cpp>
+#endif
 
 wstring xmlattr_to_str(const xml::wptree::value_type &v)
 {
@@ -34,7 +40,7 @@ wstring xmlattr_to_str(const xml::wptree::value_type &v)
 		s << L" />";
 	else
 		s << L"...</" << v.first << ">";
-	
+
 	return s.str();
 }
 
@@ -62,21 +68,28 @@ wstring xmlattr_to_str(const xml::wptree &pt)
 
 	if ( pt.size() > (size_t)(opt ? 1 : 0) )
 		s << L" ...";
-	
+
 	return s.str();
 }
 
 void my::xml::load(const std::wstring &filename, ::xml::wptree &pt)
 {
-	wifstream fs( filename.c_str() );
+	#if defined(_MSC_VER)
+	wifstream fs( filename_s.c_str() );
+	#else
+	std::string filename_s = my::str::to_string(filename);
+	wifstream fs( filename_s.c_str() );
+	#endif
 
 	if (!fs)
 		throw my::exception(L"Не удалось открыть файл")
 			<< my::param(L"file", filename);
 
+	fs.imbue( locale("C") );
+
 	/* Загрузка BOM */
 	wchar_t ch = fs.get();
-		
+
 	/* utf8 */
 	if (ch == 0x00EF && fs.get() == 0x00BB && fs.get() == 0xBF)
 		fs.imbue( locale( fs.getloc(),
