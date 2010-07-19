@@ -425,7 +425,7 @@ public:
 			iter != employer_workers_.end(); ++iter)
 		{
 			if ( !iter->unique() )
-				count++;
+				++count;
 		}
 
 		return count == 0;
@@ -438,7 +438,7 @@ public:
 		posix_time::ptime start_finish = my::time::utc_now();
 		while (!check_for_finish())
 		{
-			if (my::time::utc_now() - start_finish < timeout)
+			if (my::time::utc_now() - start_finish >= timeout)
 			{
 				my::exception e(L"my::employer: timeout");
 
@@ -449,16 +449,14 @@ public:
 					iter != employer_workers_.end(); ++iter)
 				{
 					std::wostringstream out;
-					long count = iter->use_count();
+					long use_count = iter->use_count();
 
-					out << (count == 0 ? L"???"
-							: count == 1 ? L"finished" : L"works")
-						<< L" (use_count: " << iter->use_count() << L')';
+					out << (use_count == 0 ? L"???"
+							: use_count == 1 ? L"finished" : L"works")
+						<< L" (use_count: " << use_count << L')';
 
-					e << my::param((*iter)->name_, out.str());
+					e << my::param( (*iter)->name_, out.str() );
 				}
-
-				throw e;
 			}
 		}
 	}
