@@ -30,6 +30,12 @@ namespace my {
 #define MYLOCKERPARAMS(m,c,i) m
 #define MYLOCKINSPECTOR_INIT()
 
+typedef mutex::scoped_lock locker;
+typedef recursive_mutex::scoped_lock recursive_locker;
+typedef boost::unique_lock<shared_mutex> not_shared_locker;
+typedef boost::shared_lock<shared_mutex> shared_locker;
+
+/*-
 template<typename Mutex, typename Lock>
 class locker_templ
 {
@@ -49,6 +55,7 @@ public:
 	inline void unlock()
 		{ lock_.unlock(); }
 };
+-*/
 
 #else /* #ifndef MY_LOCK_INSPECTOR */
 
@@ -260,12 +267,12 @@ public:
 	}
 };
 
-#endif /* #else | #ifndef MY_LOCK_INSPECTOR */
-
 typedef locker_templ<mutex, boost::unique_lock<mutex> > locker;
 typedef locker_templ<recursive_mutex, boost::unique_lock<recursive_mutex> > recursive_locker;
 typedef locker_templ<shared_mutex, boost::unique_lock<shared_mutex> > not_shared_locker;
 typedef locker_templ<shared_mutex, boost::shared_lock<shared_mutex> > shared_locker;
+
+#endif /* #else | #ifndef MY_LOCK_INSPECTOR */
 
 }
 

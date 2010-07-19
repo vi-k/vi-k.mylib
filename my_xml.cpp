@@ -75,34 +75,55 @@ wstring xmlattr_to_str(const xml::wptree &pt)
 void my::xml::load(const std::wstring &filename, ::xml::wptree &pt)
 {
 	#if defined(_MSC_VER)
-	wifstream fs( filename_s.c_str() );
+	const std::wstring &fname = filename;
 	#else
-	std::string filename_s = my::str::to_string(filename);
-	wifstream fs( filename_s.c_str() );
+	std::string fname = my::str::to_string(filename);
 	#endif
 
-	if (!fs)
-		throw my::exception(L"Не удалось открыть файл")
-			<< my::param(L"file", filename);
+	int charset;
 
-	fs.imbue( locale("C") );
-
-	/* Загрузка BOM */
-	wchar_t ch = fs.get();
-
-	/* utf8 */
-	if (ch == 0x00EF && fs.get() == 0x00BB && fs.get() == 0xBF)
-		fs.imbue( locale( fs.getloc(),
-			new boost::archive::detail::utf8_codecvt_facet) );
-	/* unicode */
-	else if (ch == 0x00FF && fs.get() == 0x00FE)
-		fs.imbue( locale( fs.getloc(),
-			new boost::archive::codecvt_null<wchar_t>) );
-	/* ansi */
-	else
+	/* Чтение BOM - лучше способа не нашёл, чтобы считать BOM в char,
+		а дальше заново открыть файл в wchar_t */
 	{
-		fs.imbue( locale("") );
-		fs.seekg(0);
+		ifstream fs( fname.c_str(), ios_base::in | ios_base::binary );
+
+		if (!fs)
+			throw my::exception(L"Не удалось открыть файл")
+				<< my::param(L"file", filename);
+
+		unsigned char ch = fs.get();
+
+		/* utf8 */
+		if (ch == 0xEF && fs.get() == 0xBB && fs.get() == 0xBF)
+			charset = 0;
+		/* unicode */
+		else if (ch == 0xFF && fs.get() == 0xFE)
+			charset = 1;
+		/* ansi */
+		else
+			charset = 2;
+	}
+
+	/* Открываем заново, пропускаем BOM */
+	wifstream fs( fname.c_str() );
+
+	switch (charset)
+	{
+		case 0:
+			fs.seekg(3);
+			fs.imbue( locale( fs.getloc(),
+				new boost::archive::detail::utf8_codecvt_facet) );
+			break;
+
+		case 1:
+			fs.seekg(2);
+			fs.imbue( locale( fs.getloc(),
+				new boost::archive::codecvt_null<wchar_t>) );
+			break;
+
+		case 2:
+			fs.imbue( locale("") );
+			break;
 	}
 
 	try

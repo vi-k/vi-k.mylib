@@ -16,10 +16,9 @@
 				<Compiler>
 					<Add option="/MDd" />
 					<Add option="/W3" />
-					<Add option="/Zi /D_DEBUG" />
 					<Add option="/Zi" />
-					<Add option="/wd4503" />
 					<Add option="/D_DEBUG" />
+					<Add option="/wd4503" />
 				</Compiler>
 				<Linker>
 					<Add option="/DEBUG" />
