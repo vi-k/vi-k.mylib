@@ -274,7 +274,6 @@ public:
 
 	~employer()
 	{
-		wait_for_finish();
 	}
 
 	/* Создание нового "работника". Возвращается указатель на работника.
@@ -457,6 +456,8 @@ public:
 
 					e << my::param( (*iter)->name_, out.str() );
 				}
+
+				throw e;
 			}
 		}
 	}
