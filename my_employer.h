@@ -437,12 +437,15 @@ public:
 		posix_time::ptime start_finish = my::time::utc_now();
 		while (!check_for_finish())
 		{
-			if (my::time::utc_now() - start_finish >= timeout)
-			{
-				my::exception e(L"my::employer: timeout");
+			posix_time::ptime now = my::time::utc_now();
 
-				e << my::param(L"info", info)
-					<< my::param(L"timeout", my::time::to_wstring(timeout));
+			if (now - start_finish >= timeout)
+			{
+				my::exception e(L"Timeout in my::employer (" + info + L")");
+
+				e << my::param(L"start_finish", my::time::to_wstring(start_finish))
+					<< my::param(L"timeout", my::time::to_wstring(timeout))
+					<< my::param(L"now", my::time::to_wstring(now));
 
 				for (workers_list::iterator iter = employer_workers_.begin();
 					iter != employer_workers_.end(); ++iter)
@@ -454,7 +457,8 @@ public:
 							: use_count == 1 ? L"finished" : L"works")
 						<< L" (use_count: " << use_count << L')';
 
-					e << my::param( (*iter)->name_, out.str() );
+					e << my::param(
+						L"worker(\"" + (*iter)->name_ + L"\")", out.str() );
 				}
 
 				throw e;
