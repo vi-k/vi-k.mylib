@@ -34,7 +34,14 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add directory="$(BOOST)" />
+		</Compiler>
+		<Linker>
+			<Add directory="$(BOOST)\stage\lib" />
+		</Linker>
 		<Unit filename="mylib.cpp" />
+		<Unit filename="mylib.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
