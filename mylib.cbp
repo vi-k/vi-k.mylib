@@ -18,7 +18,6 @@
 					<Add option="/W3" />
 					<Add option="/Zi" />
 					<Add option="/D_DEBUG" />
-					<Add option="/wd4503" />
 				</Compiler>
 				<Linker>
 					<Add option="/DEBUG" />
@@ -37,7 +36,6 @@
 					<Add option="/MD" />
 					<Add option="/Ox" />
 					<Add option="/W3" />
-					<Add option="/wd4503" />
 					<Add option="/DNDEBUG" />
 				</Compiler>
 				<Linker>
@@ -46,7 +44,16 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add option="/EHsc" />
+			<Add option="/wd4503" />
+			<Add directory="$(BOOST)" />
+		</Compiler>
+		<Linker>
+			<Add directory="$(BOOST)\stage\lib" />
+		</Linker>
 		<Unit filename="mylib.cpp" />
+		<Unit filename="mylib.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
