@@ -295,7 +295,7 @@ public:
 			сравнения и засыпания */
         my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
 
-		if (!employer_finish_)
+		if (ptr && !employer_finish_)
 		{
 			ptr->sleep_cond_.wait(locker);
 			return true;
@@ -309,7 +309,7 @@ public:
 	template<typename Lock>
 	bool sleep(worker::ptr ptr, Lock &lock)
 	{
-		if (!employer_finish_)
+		if (ptr && !employer_finish_)
 		{
 			ptr->sleep_cond_.wait(lock);
 			return true;
@@ -324,12 +324,15 @@ public:
 	{
 		/* Блокировкой гарантируем атомарность операций:
 			сравнения и засыпания */
-        my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
-
-		if (!employer_finish_)
+		if (ptr)
 		{
-			ptr->sleep_cond_.timed_wait(locker, rel_time);
-			return true;
+	        my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
+
+			if (!employer_finish_)
+			{
+				ptr->sleep_cond_.timed_wait(locker, rel_time);
+				return true;
+			}
 		}
 
 		return false;
@@ -339,7 +342,7 @@ public:
 	template<typename Lock, typename DurationType>
 	bool timed_sleep(worker::ptr ptr, Lock &lock, DurationType rel_time)
 	{
-		if (!employer_finish_)
+		if (ptr && !employer_finish_)
 		{
 			ptr->sleep_cond_.timed_wait(lock, rel_time);
 			return true;
@@ -354,8 +357,11 @@ public:
 		/* Блокировкой гарантируем, что не окажемся между
 			if (!finish()) и wait(). Иначе мы "разбудим" ещё
 			не спящий поток, но который тут же заснёт  */
-		my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
-		ptr->sleep_cond_.notify_all();
+		if (ptr)
+		{
+			my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
+			ptr->sleep_cond_.notify_all();
+		}
 	}
 
 	/* Разбудить поток. Блокировка обеспечена вызывающей стороной */
@@ -364,13 +370,15 @@ public:
 	{
 		/* Переданная блокировка не используется, параметр лишь
 			напоминает, что она должна быть создана самостоятельно */
-		ptr->sleep_cond_.notify_all();
+		if (ptr)
+			ptr->sleep_cond_.notify_all();
 	}
 
     /* "Увольняем" работника */
 	inline void dismiss(worker::ptr &ptr)
 	{
-		ptr.reset();
+		if (ptr)
+			ptr.reset();
 	}
 
     /* Состояние worker'ов. Единственное место, где используются
