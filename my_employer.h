@@ -218,7 +218,6 @@
 #include "my_ptr.h"
 #include "my_time.h"
 #include "my_thread.h"
-#include "my_curline.h"
 #include "my_exception.h"
 
 namespace my
@@ -232,7 +231,7 @@ public:
 	typedef shared_ptr<class worker> ptr;
 
 private:
-	my::shared_locker locker_;
+	shared_lock<shared_mutex> lock_;
 	std::wstring name_;
 	mutex mutex_;
 	condition_variable sleep_cond_;
@@ -247,7 +246,7 @@ private:
 public:
 	worker(shared_mutex &mutex, const std::wstring &name,
 		boost::function<void ()> on_finish)
-		: locker_( MYLOCKERPARAMS(mutex, 5, MYCURLINE) )
+		: lock_(mutex)
 		, name_(name)
 		, on_finish_(on_finish)
 	{
@@ -293,11 +292,11 @@ public:
 	{
 		/* Блокировкой гарантируем атомарность операций:
 			сравнения и засыпания */
-        my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
+        unique_lock<mutex> lock(ptr->mutex_);
 
 		if (ptr && !employer_finish_)
 		{
-			ptr->sleep_cond_.wait(locker);
+			ptr->sleep_cond_.wait(lock);
 			return true;
 		}
 
@@ -326,11 +325,11 @@ public:
 			сравнения и засыпания */
 		if (ptr)
 		{
-	        my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
+	        unique_lock<mutex> lock(ptr->mutex_);
 
 			if (!employer_finish_)
 			{
-				ptr->sleep_cond_.timed_wait(locker, rel_time);
+				ptr->sleep_cond_.timed_wait(lock, rel_time);
 				return true;
 			}
 		}
@@ -359,7 +358,7 @@ public:
 			не спящий поток, но который тут же заснёт  */
 		if (ptr)
 		{
-			my::locker locker( MYLOCKERPARAMS(ptr->mutex_, 5, MYCURLINE) );
+			unique_lock<mutex> lock(ptr->mutex_);
 			ptr->sleep_cond_.notify_all();
 		}
 	}
@@ -478,7 +477,7 @@ public:
 	void wait_for_finish()
 	{
 		employer_workers_.clear();
-		my::not_shared_locker locker( MYLOCKERPARAMS(employer_mutex_, 5, MYCURLINE) );
+		unique_lock<shared_mutex> lock(employer_mutex_);
 	}
 };
 

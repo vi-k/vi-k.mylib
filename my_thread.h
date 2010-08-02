@@ -8,6 +8,13 @@ using boost::shared_mutex;
 using boost::recursive_mutex;
 typedef boost::condition_variable_any condition_variable;
 
+using boost::unique_lock;
+using boost::shared_lock;
+using boost::upgrade_lock;
+using boost::unique_lock;
+using boost::upgrade_to_unique_lock;
+
+#if 0
 
 #ifdef MY_LOCK_INSPECTOR
 #include <string>
@@ -28,6 +35,7 @@ typedef mutex::scoped_lock locker;
 typedef recursive_mutex::scoped_lock recursive_locker;
 typedef boost::unique_lock<shared_mutex> not_shared_locker;
 typedef boost::shared_lock<shared_mutex> shared_locker;
+typedef boost::upgrade_lock<shared_mutex> upgrade_locker;
 
 /*-
 template<typename Mutex, typename Lock>
@@ -269,5 +277,7 @@ typedef locker_templ<shared_mutex, boost::shared_lock<shared_mutex> > shared_loc
 #endif /* #else | #ifndef MY_LOCK_INSPECTOR */
 
 }
+
+#endif
 
 #endif
