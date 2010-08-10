@@ -2,8 +2,5 @@
 
 #include <boost/config.hpp>
 
-#if defined(BOOST_WINDOWS)
+/* Прописать путь к boost! */
 #include <libs/serialization/src/utf8_codecvt_facet.cpp>
-#else
-#include </usr/local/include/boost/libs/serialization/src/utf8_codecvt_facet.cpp>
-#endif

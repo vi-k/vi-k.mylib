@@ -233,27 +233,13 @@ void message::save(const wstring &filename)
 {
 	fs::create_directories( fs::wpath(filename).parent_path() );
 
-	FILE *file = _wfopen(filename.c_str(), L"wb");
-	if (!file)
-	{
-		throw my::exception(L"Не удалось открыть файл для записи")
-			<< my::param(L"file", filename)
-			<< my::param(L"error", strerror(errno));
-	}
-	else
-	{
-		size_t size = body.size();
-		size_t writed = fwrite(body.c_str(), 1, size, file);
-		fclose(file);
+	#if defined(_MSC_VER)
+	const std::wstring &fname = filename;
+	#else
+	std::string fname = my::str::to_string(filename);
+	#endif
 
-		if (writed != size)
-			throw my::exception(L"Не удалось сохранить данные в файл")
-				<< my::param(L"file", filename)
-				<< my::param(L"error", strerror(errno));
-	}
-
-	/*-
-	ofstream fs(filename, ios::binary);
+	ofstream fs(fname.c_str(), ios::binary);
 	if (fs)
 		fs << body << flush;
 
@@ -261,7 +247,6 @@ void message::save(const wstring &filename)
 		throw my::exception(L"Не удалось сохранить данные в файл")
 			<< my::param(L"file", filename)
 			<< my::param(L"error", strerror(errno));
-	-*/
 }
 
 void reply::read_reply(tcp::socket &socket)
