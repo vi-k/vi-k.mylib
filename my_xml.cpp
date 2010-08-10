@@ -14,11 +14,8 @@ using namespace std;
 
 #include <boost/archive/codecvt_null.hpp>
 
-#if defined(BOOST_WINDOWS)
+/* Прописать путь к boost! */
 #include <libs/serialization/src/codecvt_null.cpp>
-#else
-#include </usr/local/include/boost/libs/serialization/src/codecvt_null.cpp>
-#endif
 
 wstring xmlattr_to_str(const xml::wptree::value_type &v)
 {

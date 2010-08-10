@@ -1,4 +1,4 @@
-﻿/* 
+﻿/*
 	Код основан на GNU Libidn (punycode.c):
 
 	punycode.c - Implementation of punycode used to ASCII encode IDN's
@@ -72,7 +72,7 @@ punycode_uint adapt(punycode_uint delta, punycode_uint numpoints, int firsttime)
 	punycode_uint k;
 
 	delta = firsttime ? delta / damp : delta >> 1;
-	
+
 	delta += delta / numpoints;
 
 	for (k = 0; delta > ((base - tmin) * tmax) / 2; k += base)
@@ -112,7 +112,7 @@ string punycode_encode(const wchar_t *str, size_t len)
 		punycode_uint m = maxint;
 
 		for (const wchar_t *ptr = str; ptr != end; ptr++)
-			if (*ptr >= n && *ptr < m)
+			if ( (punycode_uint)*ptr >= n && (punycode_uint)*ptr < m)
 				m = *ptr;
 
 		//if (m - n > (maxint - delta) / (h + 1))
@@ -123,12 +123,12 @@ string punycode_encode(const wchar_t *str, size_t len)
 
 		for (const wchar_t *ptr = str; ptr != end; ptr++)
 		{
-			if (*ptr < n)
+			if ( (punycode_uint)*ptr < n )
 				delta++;
 				//if (delta == 0)
 				//	return punycode_overflow;
 
-			if (*ptr == n)
+			if ( (punycode_uint)*ptr == n )
 			{
 				punycode_uint q = delta;
 
@@ -209,17 +209,17 @@ wstring punycode_decode(const char *str, size_t len)
 			if (ptr == end)
 				throw my::exception(L"Не удаётся декодировать punycode")
 					<< my::param(L"value", _str);
-			
+
 			punycode_uint digit = decode_digit(*ptr++);
 
 			if (digit >= base)
 				throw my::exception(L"Не удаётся декодировать punycode")
 					<< my::param(L"value", _str);
-		
+
 			if (digit > (maxint - i) / w)
 				throw my::exception(L"Не удаётся декодировать punycode (overflow)")
 					<< my::param(L"value", _str);
-			
+
 			i += digit * w;
 
 			punycode_uint t = (k <= bias ? tmin
@@ -232,7 +232,7 @@ wstring punycode_decode(const char *str, size_t len)
 			if (w > maxint / (base - t))
 				throw my::exception(L"Не удаётся декодировать punycode (overflow)")
 					<< my::param(L"value", _str);
-			
+
 			w *= (base - t);
 		}
 
