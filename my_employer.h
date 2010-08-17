@@ -233,11 +233,12 @@ public:
 private:
 	shared_lock<shared_mutex> lock_;
 	std::wstring name_;
+	bool finish_;
 	mutex mutex_;
 	condition_variable sleep_cond_;
 	boost::function<void ()> on_finish_;
 
-	void on_finish()
+	void do_finish()
 	{
 		if (on_finish_)
 			on_finish_();
@@ -248,12 +249,13 @@ public:
 		boost::function<void ()> on_finish)
 		: lock_(mutex)
 		, name_(name)
+		, finish_(false)
 		, on_finish_(on_finish)
 	{
 	}
 
 	inline mutex& get_mutex()
-        { return mutex_; }
+		{ return mutex_; }
 };
 
 /* Класс "работодателя" */
@@ -317,7 +319,7 @@ public:
 		return false;
 	}
 
-    /* Усыпляем на время */
+	/* Усыпляем на время */
 	template<typename DurationType>
 	bool timed_sleep(worker::ptr ptr, DurationType rel_time)
 	{
@@ -325,7 +327,7 @@ public:
 			сравнения и засыпания */
 		if (ptr)
 		{
-	        unique_lock<mutex> lock(ptr->mutex_);
+			unique_lock<mutex> lock(ptr->mutex_);
 
 			if (!employer_finish_)
 			{
@@ -337,7 +339,7 @@ public:
 		return false;
 	}
 
-    /* Усыпляем на время */
+	/* Усыпляем на время */
 	template<typename Lock, typename DurationType>
 	bool timed_sleep(worker::ptr ptr, Lock &lock, DurationType rel_time)
 	{
@@ -373,15 +375,14 @@ public:
 			ptr->sleep_cond_.notify_all();
 	}
 
-    /* "Увольняем" работника */
+	/* "Увольняем" работника */
 	inline void dismiss(worker::ptr &ptr)
 	{
 		if (ptr)
 			ptr.reset();
 	}
 
-    /* Состояние worker'ов. Единственное место, где используются
-    	названия, данные worker'ам при создании */
+	/* Состояние работников */
 	void workers_state(std::vector<std::wstring> &v)
 	{
 		v.clear();
@@ -406,7 +407,11 @@ public:
 	inline bool finish()
 		{ return employer_finish_; }
 
-	/* Завершить работу */
+	/* Проверка флага завершения работы для работника */
+	inline bool finish(worker::ptr ptr)
+		{ return employer_finish_ || ptr->finish_; }
+
+	/* Завершить работу всем работникам */
 	void lets_finish()
 	{
 		/* Устанавливаем флаг завершения */
@@ -419,7 +424,20 @@ public:
 
 		/* Вызываем обработчики завершения */
 		for_each(employer_workers_.begin(), employer_workers_.end(),
-			boost::bind(&worker::on_finish, _1));
+			boost::bind(&worker::do_finish, _1));
+	}
+
+	/* Завершить работу работника */
+	void lets_finish(worker::ptr ptr)
+	{
+		/* Устанавливаем флаг завершения */
+		if (ptr)
+		{
+			unique_lock<mutex> lock(ptr->mutex_);
+			ptr->finish_ = true;
+			wake_up(ptr, lock);
+			ptr->do_finish();
+		}
 	}
 
 	/* Проверка - завершили ли "работники" работу */
@@ -435,6 +453,15 @@ public:
 		}
 
 		return count == 0;
+	}
+
+	/* Проверка - работает ли работник */
+	bool worked(worker::ptr &ptr)
+	{
+		/* Работает, если указателем владеет ещё кто-то помимо
+			самого employer'а и того, кто вызвал эту функцию */
+		unique_lock<mutex> lock(ptr->mutex_);
+		return ptr && ptr.use_count() > 2;
 	}
 
 	/* Отладка - поиск зависших */
