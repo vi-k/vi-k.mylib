@@ -433,16 +433,19 @@ public:
 			boost::bind(&worker::do_finish, _1));
 	}
 
-	/* Завершить работу работника */
-	void lets_finish(worker::ptr ptr)
+	/* Остановить работника */
+	void lets_finish(worker::ptr ptr, bool finish = true)
 	{
 		/* Устанавливаем флаг завершения */
 		if (ptr)
 		{
 			unique_lock<mutex> lock(ptr->mutex_);
-			ptr->finish_ = true;
-			wake_up(ptr, lock);
-			ptr->do_finish();
+			ptr->finish_ = finish;
+			if (finish)
+			{
+				wake_up(ptr, lock);
+				ptr->do_finish();
+			}
 		}
 	}
 
