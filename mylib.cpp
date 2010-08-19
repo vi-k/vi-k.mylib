@@ -1,4 +1,4 @@
-﻿#define MY_LOCK_INSPECTOR /* Для проверки my::lock_inspector в my_thread.h */
+﻿#define MY_LOCK_DEBUG /* Для проверки отладки мьютексов в my_thread.h */
 
 #include "mylib.h"
 
@@ -7,6 +7,7 @@
 #include "my_num.cpp"
 #include "my_punycode.cpp"
 #include "my_str.cpp"
+#include "my_thread.cpp"
 #include "my_time.cpp"
 #include "my_utf8.cpp"
 #include "my_xml.cpp"

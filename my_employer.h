@@ -220,6 +220,10 @@
 #include "my_thread.h"
 #include "my_exception.h"
 
+#ifdef MY_LOCK_DEBUG
+#include "my_str.h"
+#endif
+
 namespace my
 {
 
@@ -250,6 +254,7 @@ public:
 		: lock_(mutex)
 		, name_(name)
 		, finish_(false)
+		, MY_MUTEX_DEFN(mutex_, my::str::to_string(name), true)
 		, on_finish_(on_finish)
 	{
 	}
@@ -270,12 +275,13 @@ private:
 public:
 	employer()
 		: employer_finish_(false)
-	{
-	}
+		, MY_MUTEX_DEF(employer_mutex_, true) {}
 
-	~employer()
-	{
-	}
+	employer(const std::string &name)
+		: employer_finish_(false)
+		, MY_MUTEX_DEFN(employer_mutex_, name, true) {}
+
+	~employer() {}
 
 	/* Создание нового "работника". Возвращается указатель на работника.
 		Напрямую к работнику стучаться не надо */
