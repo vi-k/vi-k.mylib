@@ -18,7 +18,6 @@
 #include "my_stopwatch.h"
 #include "my_str.h"
 #include "my_thread.h"
-//#include "my_thread_sample.h"
 #include "my_time.h"
 #include "my_utf8.h"
 #include "my_xml.h"
