@@ -49,10 +49,10 @@ protected:
 
 		exception(const std::exception &e) throw()
 		{
-	    	const my::exception *my_e_ptr = dynamic_cast<const my::exception*>(&e);
+			const my::exception *my_e_ptr = dynamic_cast<const my::exception*>(&e);
 
-		    if (my_e_ptr)
-    			*this = *my_e_ptr;
+			if (my_e_ptr)
+				*this = *my_e_ptr;
 			else
 				message( my::str::to_wstring(e.what()) );
 		}

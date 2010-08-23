@@ -300,7 +300,7 @@ public:
 	{
 		/* Блокировкой гарантируем атомарность операций:
 			сравнения и засыпания */
-        unique_lock<mutex> lock(ptr->mutex_);
+		unique_lock<mutex> lock(ptr->mutex_);
 
 		if (ptr && !employer_finish_)
 		{
@@ -469,8 +469,13 @@ public:
 	{
 		/* Работает, если указателем владеет ещё кто-то помимо
 			самого employer'а и того, кто вызвал эту функцию */
-		unique_lock<mutex> lock(ptr->mutex_);
-		return ptr && ptr.use_count() > 2;
+		if (!ptr)
+			return false;
+		else
+		{
+			unique_lock<mutex> lock(ptr->mutex_);
+			return ptr.use_count() > 2;
+		}
 	}
 
 	/* Отладка - поиск зависших */
