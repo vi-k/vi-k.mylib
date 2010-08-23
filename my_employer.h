@@ -298,12 +298,11 @@ public:
 	/* Усыпить поток (но только, если не было команды завершить работу) */
 	bool sleep(worker::ptr ptr)
 	{
-		/* Блокировкой гарантируем атомарность операций:
-			сравнения и засыпания */
-		unique_lock<mutex> lock(ptr->mutex_);
-
 		if (ptr && !employer_finish_)
 		{
+			/* Блокировкой гарантируем атомарность операций:
+				сравнения и засыпания */
+			unique_lock<mutex> lock(ptr->mutex_);
 			ptr->sleep_cond_.wait(lock);
 			return true;
 		}
@@ -373,7 +372,7 @@ public:
 
 	/* Разбудить поток. Блокировка обеспечена вызывающей стороной */
 	template<typename Lock>
-	void wake_up(worker::ptr ptr, Lock &lock)
+	void wake_up(worker::ptr ptr, Lock &)
 	{
 		/* Переданная блокировка не используется, параметр лишь
 			напоминает, что она должна быть создана самостоятельно */
