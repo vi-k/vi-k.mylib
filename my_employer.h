@@ -433,18 +433,26 @@ public:
 	}
 
 	/* Остановить работника */
-	void lets_finish(worker::ptr ptr, bool finish = true)
+	void lets_finish(worker::ptr ptr)
 	{
 		/* Устанавливаем флаг завершения */
 		if (ptr)
 		{
 			unique_lock<mutex> lock(ptr->mutex_);
-			ptr->finish_ = finish;
-			if (finish)
-			{
-				wake_up(ptr, lock);
-				ptr->do_finish();
-			}
+			ptr->finish_ = true;
+			wake_up(ptr, lock);
+			ptr->do_finish();
+		}
+	}
+
+	/* Отменить остановку работника */
+	void cancel_finish(worker::ptr ptr)
+	{
+		/* Сбрасываем флаг завершения */
+		if (ptr)
+		{
+			unique_lock<mutex> lock(ptr->mutex_);
+			ptr->finish_ = false;
 		}
 	}
 
