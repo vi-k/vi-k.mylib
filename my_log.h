@@ -20,32 +20,32 @@ namespace my
 class log
 {
 public:
-	enum {simple, multiline};
+	enum {clean = 1, multiline = 2};
 
 private:
 	std::wostream &out_;
 	std::wofstream fs_;
-	int type_;
+	int flags_;
 	std::wstring time_format_;
 	bool begin_;
 	boost::recursive_mutex rmutex_;
 
 public:
 	/* Лог в std::wcout, std::wcerr и т.п. */
-	log(std::wostream &out, int type = simple,
+	log(std::wostream &out, int flags = 0,
 		const std::wstring &time_format = L"%Y-%m-%d %H:%M:%S%f")
 		: out_(out)
-		, type_(type)
+		, flags_(flags)
 		, time_format_(time_format)
 		, begin_(true)
 	{
 	}
 
 	/* Лог в файл в utf8 */
-	log(const std::wstring &filename, int type = simple,
+	log(const std::wstring &filename, int flags = 0,
 		const std::wstring &time_format = L"%Y-%m-%d %H:%M:%S%f")
 		: out_(fs_)
-		, type_(type)
+		, flags_(flags)
 		, time_format_(time_format)
 		, begin_(true)
 	{
@@ -55,9 +55,9 @@ public:
 		std::string fname = my::str::to_string(filename);
 		#endif
 
-		bool log_exists = fs::exists(fname);
+		bool exists = (flags & clean) ? false : fs::exists(fname);
 
-		if (!log_exists)
+		if (!exists)
 		{
 			std::ofstream fs(fname.c_str());
 			fs << "\xEF\xBB\xBF"; /* BOM */
@@ -68,24 +68,18 @@ public:
 		fs_.imbue( std::locale( fs_.getloc(),
 			new boost::archive::detail::utf8_codecvt_facet) );
 
-		if (log_exists)
+		if (exists)
 			fs_ << std::endl;
 	}
 
 	void operator <<(const log& x)
 	{
-		switch (type_)
-		{
-			case simple:
-				out_ << L" [thread="
-					<< my::str::to_wstring( my::get_thread_name() )
-					<< L"]\n";
-				break;
-
-			case multiline:
-				out_ << L"\n\n";
-				break;
-		}
+		if (flags_ & multiline)
+			out_ << L"\n\n";
+		else
+			out_ << L" [thread="
+				<< my::str::to_wstring( my::get_thread_name() )
+				<< L"]\n";
 
 		out_ << std::flush;
 
@@ -108,18 +102,12 @@ public:
 				my::time::local_now(), time_format_.c_str())
 				<< L" thread=" << boost::this_thread::get_id();
 
-			switch (type_)
-			{
-				case simple:
-					out_ << L"] ";
-					break;
-
-				case multiline:
-					out_ << L" ("
-						<< my::str::to_wstring( my::get_thread_name() )
-						<< L")]\n";
-					break;
-			}
+			if ( !(flags_ & multiline) )
+				out_ << L"] ";
+			else
+				out_ << L" ("
+					<< my::str::to_wstring( my::get_thread_name() )
+					<< L")]\n";
 		}
 
 		out_ << x;
