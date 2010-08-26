@@ -103,16 +103,17 @@ private:
 		{
 			std::stringstream buf;
 
-			buf << my::time::to_string( my::time::local_now(), "[%Y-%m-%d %H:%M:%S%f] " );
+			buf << '[' << my::time::to_string( my::time::local_now(), "%Y-%m-%d %H:%M:%S%f")
+				<< " thread=" << boost::this_thread::get_id() << "] ";
 
 			if (name_.empty())
-				buf << std::hex << (int)this;
+				buf << "0x" << std::hex << (int)this;
 			else
 				buf << name_;
 
 			buf << '.' << func
 				<< " [" << mutex_type<Mutex>::type()
-				<< " thread=" << my::get_thread_name()
+				<< ", thread=" << my::get_thread_name()
 				<< "]\n";
 
 			std::cout << buf.str() << std::flush;
@@ -171,16 +172,17 @@ private:
 		{
 			std::stringstream buf;
 
-			buf << my::time::to_string( my::time::local_now(), "[%Y-%m-%d %H:%M:%S%f] " );
+			buf << '[' << my::time::to_string( my::time::local_now(), "%Y-%m-%d %H:%M:%S%f")
+				<< " thread=" << boost::this_thread::get_id() << "] ";
 
 			if (name_.empty())
-				buf << std::hex << (int)this;
+				buf << "0x" << std::hex << (int)this;
 			else
 				buf << name_;
 
 			buf << '.' << func
 				<< " [" << mutex_type<Mutex>::type()
-				<< " thread=" << my::get_thread_name()
+				<< ", thread=" << my::get_thread_name()
 				<< "]\n";
 
 			std::cout << buf.str() << std::flush;
