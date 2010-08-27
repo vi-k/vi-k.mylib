@@ -8,31 +8,35 @@
 namespace my
 {
 
-typedef boost::unordered_map<unsigned int, std::string> threads_map;
+#ifdef MY_LOCK_DEBUG
+my::log locks_log(L"locks.log", my::log::clean);
+#endif
+
+typedef boost::unordered_map<unsigned int, std::wstring> threads_map;
 
 threads_map g_threads;
 
 unsigned int get_thread_id()
 {
 	unsigned int id = 0;
-	std::stringstream ss;
+	std::wstringstream ss;
 	ss << boost::this_thread::get_id();
-	sscanf(ss.str().c_str(), "0x%x", &id);
+	swscanf(ss.str().c_str(), L"0x%x", &id);
 	return id;
 }
 
-void register_thread(const std::string &name)
+void register_thread(const std::wstring &name)
 {
 	g_threads[ get_thread_id() ] = name;
 }
 
-std::string& get_thread_name()
+std::wstring& get_thread_name()
 {
-	std::string &str = g_threads[ get_thread_id() ];
+	std::wstring &str = g_threads[ get_thread_id() ];
 
 	if (str.empty())
 	{
-		std::stringstream ss;
+		std::wstringstream ss;
 		ss << boost::this_thread::get_id();
 		str = ss.str();
 	}

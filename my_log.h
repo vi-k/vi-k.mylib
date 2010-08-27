@@ -5,7 +5,9 @@
 #include "my_str.h"
 #include "my_utf8.h"
 #include "my_thread.h"
+#include "my_fs.h"
 
+#include <cstddef> /* std::size_t */
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -20,7 +22,7 @@ namespace my
 class log
 {
 public:
-	enum {clean = 1, multiline = 2};
+	enum {clean = 1, singleline = 2};
 
 private:
 	std::wostream &out_;
@@ -29,6 +31,34 @@ private:
 	std::wstring time_format_;
 	bool begin_;
 	boost::recursive_mutex rmutex_;
+	std::wstring addition_;
+
+	void print_header()
+	{
+		std::wstringstream ss;
+		ss << L"Log opened: " << my::time::to_wstring(
+			my::time::local_now(), time_format_.c_str());
+
+		std::size_t sz = ss.str().size();
+		out_ << std::wstring(sz, L'=') << std::endl
+			<< ss.str() << std::endl
+			<< std::wstring(sz, L'-') << std::endl;
+
+		if (flags_ & singleline)
+			out_ << std::endl;
+	}
+
+	void print_footer()
+	{
+		std::wstringstream ss;
+		ss << L"Log closed: " << my::time::to_wstring(
+			my::time::local_now(), time_format_.c_str());
+
+		std::size_t sz = ss.str().size();
+		out_ << std::endl << std::wstring(sz, L'-') << std::endl
+			<< ss.str() << std::endl
+			<< std::wstring(sz, L'=') << std::endl;
+	}
 
 public:
 	/* Лог в std::wcout, std::wcerr и т.п. */
@@ -39,6 +69,7 @@ public:
 		, time_format_(time_format)
 		, begin_(true)
 	{
+		print_header();
 	}
 
 	/* Лог в файл в utf8 */
@@ -69,23 +100,31 @@ public:
 			new boost::archive::detail::utf8_codecvt_facet) );
 
 		if (exists)
-			fs_ << std::endl;
+			fs_ << std::endl << std::endl;
+
+		print_header();
+	}
+
+	~log()
+	{
+		print_footer();
+	}
+
+	log& operator ()(const std::wstring &addition = L"")
+	{
+		addition_ = addition;
+		return *this;
 	}
 
 	void operator <<(const log& x)
 	{
-		if (flags_ & multiline)
-			out_ << L"\n\n";
-		else
-			out_ << L" [thread="
-				<< my::str::to_wstring( my::get_thread_name() )
-				<< L"]\n";
+		out_ << std::endl << std::flush;
 
-		out_ << std::flush;
-
-		begin_ = true;
-
-		rmutex_.unlock();
+		if (!begin_)
+		{
+			begin_ = true;
+			rmutex_.unlock();
+		}
 	}
 
 	template<class T>
@@ -98,19 +137,32 @@ public:
 			rmutex_.lock();
 			begin_ = false;
 
-			out_ << L'[' << my::time::to_wstring(
-				my::time::local_now(), time_format_.c_str())
-				<< L" thread=" << boost::this_thread::get_id();
+			if ( !(flags_ & singleline) )
+				out_ << L"\n* ";
 
-			if ( !(flags_ & multiline) )
-				out_ << L"] ";
+			out_ << my::time::to_wstring(
+					my::time::local_now(), time_format_.c_str())
+				<< L" thread=" << my::get_thread_name()
+				<< L" (" << boost::this_thread::get_id() << L')';
+
+			if (!addition_.empty())
+				out_ << L' ' << addition_;
+
+			if (flags_ & singleline)
+				out_ << L" : ";
 			else
-				out_ << L" ("
-					<< my::str::to_wstring( my::get_thread_name() )
-					<< L")]\n";
+				out_ << std::endl;
 		}
 
-		out_ << x;
+		if ( !(flags_ & singleline) )
+			out_ << x;
+		else
+		{
+			std::wstringstream ss;
+			ss << x;
+			out_ << my::str::escape(ss.str(), my::str::escape_cntrl_only);
+		}
+
 		return *this;
 	}
 };
@@ -123,29 +175,42 @@ public:
 private:
 	on_log_proc on_log_;
 	std::wostringstream out_;
+	bool begin_;
+	boost::recursive_mutex rmutex_;
 
 public:
 	custom_log(on_log_proc on_log)
-		: on_log_(on_log) {}
+		: on_log_(on_log)
+		, begin_(true) {}
 
 	void operator <<(const custom_log& x)
-	{
-		flush();
-	}
-
-	template<class T>
-	custom_log& operator <<(const T& x)
-	{
-		out_ << x;
-		return *this;
-	}
-
-	void flush()
 	{
 		std::wstring text = out_.str();
 		if (on_log_ && !text.empty())
 			on_log_(text);
 		out_.str(L"");
+
+		if (!begin_)
+		{
+			begin_ = true;
+			rmutex_.unlock();
+		}
+
+	}
+
+	template<class T>
+	custom_log& operator <<(const T& x)
+	{
+		unique_lock<boost::recursive_mutex> l(rmutex_);
+
+		if (begin_)
+		{
+			rmutex_.lock();
+			begin_ = false;
+		}
+
+		out_ << x;
+		return *this;
 	}
 };
 
