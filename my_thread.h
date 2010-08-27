@@ -106,8 +106,8 @@ private:
 	{
 		if (log_)
 		{
-			my::locks_log(
-				std::wstring(L"class=") + mutex_type<Mutex>::type() );
+			my::locks_log.to_header(L" class=");
+			my::locks_log.to_header(mutex_type<Mutex>::type());
 
 			if (name_.empty())
 				my::locks_log << L"0x" << std::hex << (int)this;
@@ -168,8 +168,8 @@ private:
 	{
 		if (log_)
 		{
-			my::locks_log(
-				std::wstring(L"class=") + mutex_type<Mutex>::type() );
+			my::locks_log.to_header(L" class=");
+			my::locks_log.to_header(mutex_type<Mutex>::type());
 
 			if (name_.empty())
 				my::locks_log << L"0x" << std::hex << (int)this;

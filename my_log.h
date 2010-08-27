@@ -29,9 +29,8 @@ private:
 	std::wofstream fs_;
 	int flags_;
 	std::wstring time_format_;
-	bool begin_;
+	int state_;
 	boost::recursive_mutex rmutex_;
-	std::wstring addition_;
 
 	void print_header()
 	{
@@ -60,6 +59,50 @@ private:
 			<< std::wstring(sz, L'=') << std::endl;
 	}
 
+	void change_state(int st)
+	{
+		while (state_ != st)
+		{
+			switch (state_)
+			{
+				case 0:
+					/* Выводим начало строки (дата и название потока),
+						блокируем вывод в лог другим потокам */
+
+					rmutex_.lock();
+
+					if ( !(flags_ & singleline) )
+						out_ << L"\n* ";
+
+					out_ << my::time::to_wstring(
+							my::time::local_now(), time_format_.c_str())
+						<< L" thread=" << my::get_thread_name();
+						//<< L" (" << boost::this_thread::get_id() << L')';
+
+					state_ = 1;
+					break;
+
+				case 1:
+					if (flags_ & singleline)
+						out_ << L" : ";
+					else
+						out_ << std::endl;
+
+					state_ = 2;
+					break;
+
+				case 2:
+					out_ << std::endl << std::flush;
+
+					state_ = 0;
+					rmutex_.unlock();
+					break;
+
+			} /* switch (state_) */
+
+		} /* while (state_ != st) */
+	}
+
 public:
 	/* Лог в std::wcout, std::wcerr и т.п. */
 	log(std::wostream &out, int flags = 0,
@@ -67,7 +110,7 @@ public:
 		: out_(out)
 		, flags_(flags)
 		, time_format_(time_format)
-		, begin_(true)
+		, state_(0)
 	{
 		print_header();
 	}
@@ -78,7 +121,7 @@ public:
 		: out_(fs_)
 		, flags_(flags)
 		, time_format_(time_format)
-		, begin_(true)
+		, state_(0)
 	{
 		#if defined(_MSC_VER)
 		const std::wstring &fname = filename;
@@ -110,21 +153,18 @@ public:
 		print_footer();
 	}
 
-	log& operator ()(const std::wstring &addition = L"")
+	void to_header(const std::wstring &text)
 	{
-		addition_ = addition;
-		return *this;
+		unique_lock<boost::recursive_mutex> l(rmutex_);
+
+		change_state(1);
+		out_ << text;
 	}
 
 	void operator <<(const log& x)
 	{
-		out_ << std::endl << std::flush;
-
-		if (!begin_)
-		{
-			begin_ = true;
-			rmutex_.unlock();
-		}
+		unique_lock<boost::recursive_mutex> l(rmutex_);
+		change_state(0);
 	}
 
 	template<class T>
@@ -132,27 +172,7 @@ public:
 	{
 		unique_lock<boost::recursive_mutex> l(rmutex_);
 
-		if (begin_)
-		{
-			rmutex_.lock();
-			begin_ = false;
-
-			if ( !(flags_ & singleline) )
-				out_ << L"\n* ";
-
-			out_ << my::time::to_wstring(
-					my::time::local_now(), time_format_.c_str())
-				<< L" thread=" << my::get_thread_name()
-				<< L" (" << boost::this_thread::get_id() << L')';
-
-			if (!addition_.empty())
-				out_ << L' ' << addition_;
-
-			if (flags_ & singleline)
-				out_ << L" : ";
-			else
-				out_ << std::endl;
-		}
+		change_state(2);
 
 		if ( !(flags_ & singleline) )
 			out_ << x;
