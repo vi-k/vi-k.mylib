@@ -254,7 +254,7 @@ public:
 		: lock_(mutex)
 		, name_(name)
 		, finish_(false)
-		, MY_MUTEX_DEFN(mutex_, my::str::to_string(name), true)
+		, MY_MUTEX_DEFN(mutex_, name, true)
 		, on_finish_(on_finish)
 	{
 	}
@@ -277,7 +277,7 @@ public:
 		: employer_finish_(false)
 		, MY_MUTEX_DEF(employer_mutex_, true) {}
 
-	employer(const std::string &name)
+	employer(const std::wstring &name)
 		: employer_finish_(false)
 		, MY_MUTEX_DEFN(employer_mutex_, name, true) {}
 
