@@ -342,33 +342,33 @@ DEF_NUM_TO_FUNCS(unsigned,unsigned long long)
 */
 
 template<class Char, class Type>
-inline std::size_t get_signed(const Char *str, std::size_t str_sz, Type &res);
+std::size_t get_signed(const Char *str, std::size_t str_sz, Type &res);
 
 template<class Char, class Type>
-inline Type to_signed_def(const Char *str, std::size_t str_sz, Type def);
+Type to_signed_def(const Char *str, std::size_t str_sz, Type def);
 
 template<class Char, class Type>
-inline bool try_to_signed(const Char *str, std::size_t str_sz, Type &res);
-
-
-template<class Char, class Type>
-inline std::size_t get_unsigned(const Char *str, std::size_t str_sz, Type &res);
-
-template<class Char, class Type>
-inline Type to_unsigned_def(const Char *str, std::size_t str_sz, Type def);
-
-template<class Char, class Type>
-inline bool try_to_unsigned(const Char *str, std::size_t str_sz, Type &res);
+bool try_to_signed(const Char *str, std::size_t str_sz, Type &res);
 
 
 template<class Char, class Type>
-inline std::size_t get_real(const Char *str, std::size_t str_sz, Type &res);
+std::size_t get_unsigned(const Char *str, std::size_t str_sz, Type &res);
 
 template<class Char, class Type>
-inline Type to_real_def(const Char *str, std::size_t str_sz, Type def);
+Type to_unsigned_def(const Char *str, std::size_t str_sz, Type def);
 
 template<class Char, class Type>
-inline bool try_to_real(const Char *str, std::size_t str_sz, Type &res);
+bool try_to_unsigned(const Char *str, std::size_t str_sz, Type &res);
+
+
+template<class Char, class Type>
+std::size_t get_real(const Char *str, std::size_t str_sz, Type &res);
+
+template<class Char, class Type>
+Type to_real_def(const Char *str, std::size_t str_sz, Type def);
+
+template<class Char, class Type>
+bool try_to_real(const Char *str, std::size_t str_sz, Type &res);
 
 
 #define DEF_TO_NUM_FUNCS(S,N,T)\
