@@ -48,6 +48,7 @@ private:
 			buf_ << std::endl;
 
 		out_ << buf_.str() << std::flush;
+		buf_.str(L"");
 	}
 
 	void print_footer()
@@ -62,6 +63,7 @@ private:
 			<< std::wstring(sz, L'=') << std::endl;
 
 		out_ << buf_.str() << std::flush;
+		buf_.str(L"");
 	}
 
 	void change_state(int st)
