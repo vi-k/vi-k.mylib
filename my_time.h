@@ -537,56 +537,6 @@ inline gregorian::date to_date(const std::basic_string<Char> &str)
 	{ return my::time::to_date(str.c_str(), str.size()); }
 
 
-/* Преобразование строки в дату/время (boost::posix_time::ptime) */
-template<class Char>
-std::size_t get(const Char *str, std::size_t str_sz,
-	posix_time::ptime &time)
-{
-	const Char *ptr = str;
-	const Char *end = my::str::end(str, str_sz);
-
-	time = posix_time::not_a_date_time;
-
-	gregorian::date date;
-	ptr += my::time::get(str, end - ptr, date);
-
-	if (!date.is_special() && ptr != end && *ptr == ' ')
-	{
-		ptr++;
-
-		posix_time::time_duration dur;
-		ptr += my::time::get(ptr, end - ptr, dur);
-
-		if (!dur.is_special() && !dur.is_negative() && dur.hours() < 24)
-			time = posix_time::ptime(date, dur);
-	}
-
-	return ptr - str;
-}
-
-template<class Char>
-inline std::size_t get(const std::basic_string<Char> &str,
-	posix_time::ptime &time)
-	{ return my::time::get(str.c_str(), str.size(), time); }
-
-template<class Char>
-inline posix_time::ptime to_time(const Char *str, std::size_t str_sz)
-{
-	posix_time::ptime time;
-
-	str_sz = my::str::end(str, str_sz) - str;
-
-	if (str_sz != my::time::get(str, str_sz, time))
-		time = posix_time::not_a_date_time;
-
-	return time;
-}
-
-template<class Char>
-inline posix_time::ptime to_time(const std::basic_string<Char> &str)
-	{ return my::time::to_time(str.c_str(), str.size()); }
-
-
 /* Преобразование строки в длительность (boost::posix_time::time_duration) */
 template<class Char>
 std::size_t get(const Char *str, std::size_t str_sz,
@@ -712,6 +662,56 @@ inline posix_time::time_duration to_duration(const Char *str,
 template<class Char>
 inline posix_time::time_duration to_duration(const std::basic_string<Char> &str)
 	{ return my::time::to_duration(str.c_str(), str.size()); }
+
+
+/* Преобразование строки в дату/время (boost::posix_time::ptime) */
+template<class Char>
+std::size_t get(const Char *str, std::size_t str_sz,
+	posix_time::ptime &time, const Char delim = ' ')
+{
+	const Char *ptr = str;
+	const Char *end = my::str::end(str, str_sz);
+
+	time = posix_time::not_a_date_time;
+
+	gregorian::date date;
+	ptr += my::time::get(str, end - ptr, date);
+
+	if (!date.is_special() && ptr != end && *ptr == delim)
+	{
+		ptr++;
+
+		posix_time::time_duration dur;
+		ptr += my::time::get(ptr, end - ptr, dur);
+
+		if (!dur.is_special() && !dur.is_negative() && dur.hours() < 24)
+			time = posix_time::ptime(date, dur);
+	}
+
+	return ptr - str;
+}
+
+template<class Char>
+inline std::size_t get(const std::basic_string<Char> &str,
+	posix_time::ptime &time, const Char delim = ' ')
+	{ return my::time::get(str.c_str(), str.size(), time, delim); }
+
+template<class Char>
+inline posix_time::ptime to_time(const Char *str, std::size_t str_sz, const Char delim = ' ')
+{
+	posix_time::ptime time;
+
+	str_sz = my::str::end(str, str_sz) - str;
+
+	if (str_sz != my::time::get(str, str_sz, time, delim))
+		time = posix_time::not_a_date_time;
+
+	return time;
+}
+
+template<class Char>
+inline posix_time::ptime to_time(const std::basic_string<Char> &str, const Char delim = ' ')
+	{ return my::time::to_time(str.c_str(), str.size(), delim); }
 
 
 }}
