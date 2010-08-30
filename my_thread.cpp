@@ -3,14 +3,13 @@
 #include <stdio.h>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 
 namespace my
 {
 
-#ifdef MY_LOCK_DEBUG
 my::log locks_log(L"locks.log", my::log::clean);
-#endif
 
 typedef boost::unordered_map<unsigned int, std::wstring> threads_map;
 

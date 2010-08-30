@@ -27,10 +27,11 @@ public:
 private:
 	std::wostream &out_;
 	std::wofstream fs_;
-	int flags_;
-	std::wstring time_format_;
-	int state_;
+	const int flags_;
+	const std::wstring time_format_;
 	boost::recursive_mutex rmutex_;
+	std::wstringstream buf_;
+	int state_;
 
 	void print_header()
 	{
@@ -39,12 +40,14 @@ private:
 			my::time::local_now(), time_format_.c_str());
 
 		std::size_t sz = ss.str().size();
-		out_ << std::wstring(sz, L'=') << std::endl
+		buf_ << std::wstring(sz, L'=') << std::endl
 			<< ss.str() << std::endl
 			<< std::wstring(sz, L'-') << std::endl;
 
 		if (flags_ & singleline)
-			out_ << std::endl;
+			buf_ << std::endl;
+
+		out_ << buf_.str() << std::flush;
 	}
 
 	void print_footer()
@@ -54,9 +57,11 @@ private:
 			my::time::local_now(), time_format_.c_str());
 
 		std::size_t sz = ss.str().size();
-		out_ << std::endl << std::wstring(sz, L'-') << std::endl
+		buf_ << std::endl << std::wstring(sz, L'-') << std::endl
 			<< ss.str() << std::endl
 			<< std::wstring(sz, L'=') << std::endl;
+
+		out_ << buf_.str() << std::flush;
 	}
 
 	void change_state(int st)
@@ -72,9 +77,9 @@ private:
 					rmutex_.lock();
 
 					if ( !(flags_ & singleline) )
-						out_ << L"\n* ";
+						buf_ << L"\n* ";
 
-					out_ << my::time::to_wstring(
+					buf_ << my::time::to_wstring(
 							my::time::local_now(), time_format_.c_str())
 						<< L" thread=" << my::get_thread_name();
 						//<< L" (" << boost::this_thread::get_id() << L')';
@@ -84,15 +89,17 @@ private:
 
 				case 1:
 					if (flags_ & singleline)
-						out_ << L" : ";
+						buf_ << L" : ";
 					else
-						out_ << std::endl;
+						buf_ << std::endl;
 
 					state_ = 2;
 					break;
 
 				case 2:
-					out_ << std::endl << std::flush;
+					buf_ << std::endl;
+					out_ << buf_.str() << std::flush;
+					buf_.str(L"");
 
 					state_ = 0;
 					rmutex_.unlock();
@@ -158,7 +165,7 @@ public:
 		unique_lock<boost::recursive_mutex> l(rmutex_);
 
 		change_state(1);
-		out_ << text;
+		buf_ << text;
 	}
 
 	void operator <<(const log& x)
@@ -175,12 +182,12 @@ public:
 		change_state(2);
 
 		if ( !(flags_ & singleline) )
-			out_ << x;
+			buf_ << x;
 		else
 		{
 			std::wstringstream ss;
 			ss << x;
-			out_ << my::str::escape(ss.str(), my::str::escape_cntrl_only);
+			buf_ << my::str::escape(ss.str(), my::str::escape_cntrl_only);
 		}
 
 		return *this;

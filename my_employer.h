@@ -249,12 +249,12 @@ private:
 	}
 
 public:
-	worker(shared_mutex &mutex, const std::wstring &name,
+	worker(shared_mutex &mutex, const std::wstring &name, bool log,
 		boost::function<void ()> on_finish)
 		: lock_(mutex)
 		, name_(name)
 		, finish_(false)
-		, MY_MUTEX_DEFN(mutex_, name, true)
+		, MY_MUTEX_DEFN(mutex_, name, log)
 		, on_finish_(on_finish)
 	{
 	}
@@ -273,13 +273,13 @@ private:
 	workers_list employer_workers_;
 
 public:
-	employer()
+	employer(bool log = false)
 		: employer_finish_(false)
-		, MY_MUTEX_DEF(employer_mutex_, true) {}
+		, MY_MUTEX_DEF(employer_mutex_, log) {}
 
-	employer(const std::wstring &name)
+	employer(const std::wstring &name, bool log = false)
 		: employer_finish_(false)
-		, MY_MUTEX_DEFN(employer_mutex_, name, true) {}
+		, MY_MUTEX_DEFN(employer_mutex_, name, log) {}
 
 	~employer() {}
 
@@ -288,12 +288,23 @@ public:
 	worker::ptr new_worker(const std::wstring &name = std::wstring(),
 		boost::function<void ()> on_finish = boost::function<void ()>())
 	{
-		worker::ptr ptr( new worker(employer_mutex_, name, on_finish) );
+		worker::ptr ptr( new worker(employer_mutex_, name, true, on_finish) );
 
 		employer_workers_.push_back(ptr);
 
 		return ptr;
 	}
+
+	worker::ptr new_worker(const std::wstring &name, bool log,
+		boost::function<void ()> on_finish = boost::function<void ()>())
+	{
+		worker::ptr ptr( new worker(employer_mutex_, name, log, on_finish) );
+
+		employer_workers_.push_back(ptr);
+
+		return ptr;
+	}
+
 
 	/* Усыпить поток (но только, если не было команды завершить работу) */
 	bool sleep(worker::ptr ptr)
