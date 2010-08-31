@@ -1,11 +1,13 @@
-﻿#ifndef MY_LOG_H
+﻿#include "my_thread.h" /* Обязательно здесь! */
+#include "my_debug.h"
+
+#ifndef MY_LOG_H
 #define MY_LOG_H
 
-#include "my_time.h"
-#include "my_str.h"
-#include "my_utf8.h"
-#include "my_thread.h"
-#include "my_fs.h"
+#include "my_time.h" /* my::time::to_wstring */
+#include "my_str.h" /* my::str::to_string, my::str::escape */
+#include "my_utf8.h" /* boost::...::utf8_codecvt_facet */
+#include "my_fs.h" /* boost::filesystem */
 
 #include <cstddef> /* std::size_t */
 #include <string>
@@ -16,13 +18,15 @@
 #include <boost/format.hpp>
 #include <boost/format/format_fwd.hpp>
 
+
 namespace my
 {
 
 class log
 {
 public:
-	enum {clean = 1, singleline = 2};
+	enum {clean=1, full=0, nolineheader=2, simple=2, singleline=4, single=4,
+		nothread=8, nothreadid=16};
 
 private:
 	std::wostream &out_;
@@ -78,22 +82,33 @@ private:
 
 					rmutex_.lock();
 
-					if ( !(flags_ & singleline) )
-						buf_ << L"\n* ";
+					if ( !(flags_ & nolineheader) )
+					{
+						if ( !(flags_ & singleline) )
+							buf_ << std::endl;
 
-					buf_ << my::time::to_wstring(
-							my::time::local_now(), time_format_.c_str())
-						<< L" thread=" << my::get_thread_name();
-						//<< L" (" << boost::this_thread::get_id() << L')';
+						buf_ << my::time::to_wstring(
+							my::time::local_now(), time_format_.c_str());
+
+						if ( !(flags_ & nothread) )
+						{
+							buf_ << L" thread=" << my::get_thread_name();
+							if ( !(flags_ & nothreadid) )
+								buf_ << L" (" << boost::this_thread::get_id() << L')';
+						}
+					}
 
 					state_ = 1;
 					break;
 
 				case 1:
-					if (flags_ & singleline)
-						buf_ << L" : ";
-					else
-						buf_ << std::endl;
+					if ( !(flags_ & nolineheader) )
+					{
+						if (flags_ & singleline)
+							buf_ << L": ";
+						else
+							buf_ << std::endl;
+					}
 
 					state_ = 2;
 					break;
@@ -167,7 +182,9 @@ public:
 		unique_lock<boost::recursive_mutex> l(rmutex_);
 
 		change_state(1);
-		buf_ << text;
+
+		if ( !(flags_ & nolineheader) )
+			buf_ << text;
 	}
 
 	void operator <<(const log& x)
@@ -194,6 +211,21 @@ public:
 
 		return *this;
 	}
+};
+
+class null_log
+{
+public:
+	null_log() {}
+	~null_log() {}
+
+	void to_header(const std::wstring &text) {}
+
+	void operator <<(const null_log& x) {}
+
+	template<class T>
+	null_log& operator <<(const T& x)
+		{ return *this; }
 };
 
 class custom_log
