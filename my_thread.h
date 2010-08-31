@@ -3,16 +3,6 @@
 
 #include <boost/thread.hpp>
 
-
-/* Регистрация потоков по имени */
-namespace my
-{
-    unsigned int get_thread_id();
-    void register_thread(const std::wstring &name);
-    std::wstring& get_thread_name();
-}
-
-
 /* Блокировки */
 using boost::unique_lock;
 using boost::shared_lock;
@@ -24,11 +14,10 @@ typedef boost::condition_variable_any condition_variable;
 
 /* Мьютексы */
 
-#ifndef MY_LOCK_DEBUG
+#ifdef MY_LOCK_NDEBUG
 
 #define MY_MUTEX_DEF(var,log) var()
 #define MY_MUTEX_DEFN(var,name,log) var()
-#define MY_REGISTER_THREAD(name)
 
 using boost::mutex;
 using boost::shared_mutex;
@@ -36,14 +25,14 @@ using boost::recursive_mutex;
 
 #else
 
-#include "my_log.h"
+#include "my_debug.h"
+
 #include <iostream>
 #include <boost/unordered_map.hpp>
 #include <boost/utility.hpp> /* boost::noncopyable */
 
 #define MY_MUTEX_DEF(var,log) var(L ## #var,(log))
 #define MY_MUTEX_DEFN(var,name,log) var((name),(log))
-#define MY_REGISTER_THREAD(name) my::register_thread(name)
 
 template<typename T>
 class mutex_type
@@ -51,7 +40,7 @@ class mutex_type
 public:
 	static const wchar_t* type()
 	{
-		static const wchar_t type[] = L"unknown mutex";
+		static const wchar_t type[] = L"[unknown mutex]";
 		return type;
 	}
 };
@@ -62,7 +51,7 @@ class mutex_type<boost::mutex>
 public:
 	static const wchar_t* type()
 	{
-		static const wchar_t type[] = L"mutex";
+		static const wchar_t type[] = L"[mutex]";
 		return type;
 	}
 };
@@ -73,7 +62,7 @@ class mutex_type<boost::recursive_mutex>
 public:
 	static const wchar_t* type()
 	{
-		static const wchar_t type[] = L"recursive_mutex";
+		static const wchar_t type[] = L"[recursive_mutex]";
 		return type;
 	}
 };
@@ -84,15 +73,11 @@ class mutex_type<boost::shared_mutex>
 public:
 	static const wchar_t* type()
 	{
-		static const wchar_t type[] = L"shared_mutex";
+		static const wchar_t type[] = L"[shared_mutex]";
 		return type;
 	}
 };
 
-namespace my
-{
-	extern my::log locks_log;
-}
 
 template<typename Mutex>
 class my_mutex : boost::noncopyable
@@ -102,54 +87,43 @@ private:
 	std::wstring name_;
 	bool log_;
 
-	void lock_debug(const wchar_t *func)
+public:
+	my_mutex() : m_(), log_(false) {}
+
+	my_mutex(const std::wstring &name, bool log)
+		: name_(name), log_(log)
 	{
-		if (log_)
+		if (name_.empty())
 		{
-			my::locks_log.to_header(L" class=");
-			my::locks_log.to_header(mutex_type<Mutex>::type());
-
-			if (name_.empty())
-				my::locks_log << L"0x" << std::hex << (int)this;
-			else
-				my::locks_log << name_;
-
-			my::locks_log << L'.' << func << my::locks_log;
+			std::wstringstream ss;
+			ss << L"0x" << std::hex << (int)this;
+			name_ = ss.str();
 		}
 	}
-
-public:
-	my_mutex() : m_() {}
-	my_mutex(const std::wstring &name, bool log)
-		: name_(name), log_(log) {}
 
 	~my_mutex() {}
 
 
 	void lock()
 	{
-		lock_debug(L"lock()");
+		my::scope sc(log_, name_ + L".lock()", mutex_type<Mutex>::type());
 		m_.lock();
-		lock_debug(L"lock()=ok");
 	}
 
 	bool try_lock()
 	{
-		lock_debug(L"try_lock()");
+		my::scope sc(log_, name_ + L".try_lock()", mutex_type<Mutex>::type());
+
 		bool res = m_.try_lock();
-		lock_debug( res ? L"try_lock()=true" : L"try_lock()=false" );
+		sc.add(res ? L"=true" : L"=false");
+
 		return res;
 	}
 
 	void unlock()
 	{
-		lock_debug(L"unlock()");
+		my::scope sc(log_, name_ + L".unlock()", mutex_type<Mutex>::type());
 		m_.unlock();
-
-		/* Если мьютексом владеет другой поток, то сразу после unlock()
-			он может перестать существовать, поэтому здесь лучше
-			больше ничего не делать. Собственно, и необходимости
-			такой нет, т.к. unlock() должен срабатывать сразу  */
 	}
 
 	typedef boost::unique_lock< my_mutex<Mutex> > scoped_lock;
@@ -164,104 +138,95 @@ private:
 	std::wstring name_;
 	bool log_;
 
-	void lock_debug(const wchar_t *func)
+public:
+	my_shared_mutex() : m_(), log_(false) {}
+
+	my_shared_mutex(const std::wstring &name, bool log)
+		: name_(name), log_(log)
 	{
-		if (log_)
+		if (name_.empty())
 		{
-			my::locks_log.to_header(L" class=");
-			my::locks_log.to_header(mutex_type<Mutex>::type());
-
-			if (name_.empty())
-				my::locks_log << L"0x" << std::hex << (int)this;
-			else
-				my::locks_log << name_;
-
-			my::locks_log << L'.' << func << my::locks_log;
+			std::wstringstream ss;
+			ss << L"0x" << std::hex << (int)this;
+			name_ = ss.str();
 		}
 	}
-
-public:
-	my_shared_mutex() : m_() {}
-	my_shared_mutex(const std::wstring &name, bool log)
-		: name_(name), log_(log) {}
 
 	~my_shared_mutex() {}
 
 	void lock()
 	{
-		lock_debug(L"lock()");
+		my::scope sc(log_, name_ + L".lock()", mutex_type<Mutex>::type());
 		m_.lock();
-		lock_debug(L"lock()=ok");
 	}
 
 	bool try_lock()
 	{
-		lock_debug(L"try_lock()");
+		my::scope sc(log_, name_ + L".try_lock()", mutex_type<Mutex>::type());
+
 		bool res = m_.try_lock();
-		lock_debug( res ? L"try_lock()=true" : L"try_lock()=false" );
+		sc.add(res ? L"=true" : L"=false");
+
 		return res;
 	}
 
 	void unlock()
 	{
-		lock_debug(L"unlock()");
+		my::scope sc(log_, name_ + L".UNlock()", mutex_type<Mutex>::type());
 		m_.unlock();
-
-		/* Если мьютексом владеет другой поток, то сразу после unlock()
-			он может перестать существовать, поэтому здесь лучше
-			больше ничего не делать. Собственно, и необходимости
-			такой нет, т.к. unlock() должен срабатывать сразу  */
 	}
 
 	void lock_shared()
 	{
-		lock_debug(L"lock_shared()");
+		my::scope sc(log_, name_ + L".lock_shared()", mutex_type<Mutex>::type());
 		m_.lock_shared();
-		lock_debug(L"lock_shared()=ok");
 	}
 
 	bool try_lock_shared()
 	{
-		lock_debug(L"try_lock_shared()");
+		my::scope sc(log_, name_ + L".try_lock_shared()", mutex_type<Mutex>::type());
+
 		bool res = m_.try_lock_shared();
-		lock_debug( res ? L"try_lock_shared()=true" : L"try_lock_shared()=false" );
+		sc.add(res ? L"=true" : L"=false");
+
 		return res;
 	}
 
 	template<typename TimeDuration>
 	bool timed_lock_shared(TimeDuration const& relative_time)
 	{
-		lock_debug(L"timed_lock_shared()");
+		my::scope sc(log_, name_ + L".timed_lock_shared()", mutex_type<Mutex>::type());
+
 		bool res = m_.timed_lock_shared(relative_time);
-		lock_debug( res ? L"timed_lock_shared()=true" : L"timed_lock_shared()=false" );
+		sc.add(res ? L"=true" : L"=false");
+
 		return res;
 	}
 
 	bool timed_lock_shared(boost::system_time const& wait_until)
 	{
-		lock_debug(L"timed_lock_shared()");
+		my::scope sc(log_, name_ + L".timed_lock_shared()", mutex_type<Mutex>::type());
+
 		bool res = m_.timed_lock_shared(wait_until);
-		lock_debug( res ? L"timed_lock_shared()=true" : L"timed_lock_shared()=false" );
+		sc.add(res ? L"=true" : L"=false");
+
 		return res;
 	}
 
 	void unlock_shared()
 	{
-		lock_debug(L"unlock_shared()");
+		my::scope sc(log_, name_ + L".unlock_shared()", mutex_type<Mutex>::type());
 		m_.unlock_shared();
-
-		/* Если мьютексом владеет другой поток, то сразу после unlock()
-			он может перестать существовать, поэтому здесь лучше
-			больше ничего не делать. Собственно, и необходимости
-			такой нет, т.к. unlock() должен срабатывать сразу  */
 	}
 
 	template<typename TimeDuration>
 	bool timed_lock(TimeDuration const& relative_time)
 	{
-		lock_debug(L"timed_lock()");
+		my::scope sc(log_, name_ + L".timed_lock()", mutex_type<Mutex>::type());
+
 		bool res = m_.timed_lock(relative_time);
-		lock_debug( res ? L"timed_lock()=true" : L"timed_lock()=false" );
+		sc.add(res ? L"=true" : L"=false");
+
 		return res;
 	}
 
@@ -273,6 +238,6 @@ typedef my_mutex<boost::mutex> mutex;
 typedef my_mutex<boost::recursive_mutex> recursive_mutex;
 typedef my_shared_mutex<boost::shared_mutex> shared_mutex;
 
-#endif /* MY_LOCK_DEBUG */
+#endif /* #ifndef MY_LOCK_NDEBUG */
 
 #endif

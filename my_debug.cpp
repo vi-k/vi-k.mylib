@@ -1,15 +1,13 @@
-﻿#include "my_thread.h"
+﻿#include "my_debug.h"
+#include "my_thread.h"
 
 #include <stdio.h>
-#include <string>
 #include <sstream>
 #include <iostream>
 
 
 namespace my
 {
-
-my::log locks_log(L"locks.log", my::log::clean);
 
 typedef boost::unordered_map<unsigned int, std::wstring> threads_map;
 
@@ -43,4 +41,4 @@ std::wstring& get_thread_name()
 	return str;
 }
 
-}
+} /* namespace my */
