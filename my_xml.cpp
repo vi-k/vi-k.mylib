@@ -5,8 +5,6 @@
 
 #include <locale>
 #include <sstream>
-#include <fstream>
-using namespace std;
 
 #include <boost/config.hpp>
 #include <boost/optional.hpp>
@@ -17,9 +15,9 @@ using namespace std;
 /* Прописать путь к boost! */
 #include <libs/serialization/src/codecvt_null.cpp>
 
-wstring xmlattr_to_str(const xml::wptree::value_type &v)
+std::wstring xmlattr_to_str(const xml::wptree::value_type &v)
 {
-	wostringstream s;
+	std::wostringstream s;
 
 	s << L"<" << v.first;
 
@@ -41,9 +39,9 @@ wstring xmlattr_to_str(const xml::wptree::value_type &v)
 	return s.str();
 }
 
-wstring xmlattr_to_str(const xml::wptree &pt)
+std::wstring xmlattr_to_str(const xml::wptree &pt)
 {
-	wostringstream s;
+	std::wostringstream s;
 	bool first = true;
 
 	boost::optional<const xml::wptree&> opt
@@ -71,18 +69,12 @@ wstring xmlattr_to_str(const xml::wptree &pt)
 
 void my::xml::load(const std::wstring &filename, ::xml::wptree &pt)
 {
-	#if defined(_MSC_VER)
-	const std::wstring &fname = filename;
-	#else
-	std::string fname = my::str::to_string(filename);
-	#endif
-
 	int charset;
 
 	/* Чтение BOM - лучше способа не нашёл, чтобы считать BOM в char,
 		а дальше заново открыть файл в wchar_t */
 	{
-		ifstream fs( fname.c_str(), ios_base::in | ios_base::binary );
+		fs::ifstream fs(filename, ios_base::in | ios_base::binary);
 
 		if (!fs)
 			throw my::exception(L"Не удалось открыть файл")
@@ -102,7 +94,7 @@ void my::xml::load(const std::wstring &filename, ::xml::wptree &pt)
 	}
 
 	/* Открываем заново, пропускаем BOM */
-	wifstream fs( fname.c_str() );
+	fs::wifstream fs(filename);
 
 	switch (charset)
 	{

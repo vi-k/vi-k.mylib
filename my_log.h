@@ -12,7 +12,6 @@
 #include <cstddef> /* std::size_t */
 #include <string>
 #include <sstream>
-#include <fstream>
 
 #include <boost/function.hpp>
 #include <boost/format.hpp>
@@ -30,7 +29,7 @@ public:
 
 private:
 	std::wostream &out_;
-	std::wofstream fs_;
+	fs::wofstream fs_;
 	const int flags_;
 	const std::wstring time_format_;
 	boost::recursive_mutex rmutex_;
@@ -147,22 +146,15 @@ public:
 		, time_format_(time_format)
 		, state_(0)
 	{
-		#if defined(_MSC_VER)
-		const std::wstring &fname = filename;
-		#else
-		std::string fname = my::str::to_string(filename);
-		#endif
-
-		bool exists = (flags & clean) ? false : fs::exists(fname);
+		bool exists = (flags & clean) ? false : fs::exists(filename);
 
 		if (!exists)
 		{
-			std::ofstream fs(fname.c_str());
+			fs::ofstream fs(filename);
 			fs << "\xEF\xBB\xBF"; /* BOM */
-			fs.close();
 		}
 
-		fs_.open(fname.c_str(), std::ios::app);
+		fs_.open(filename, std::ios::app);
 		fs_.imbue( std::locale( fs_.getloc(),
 			new boost::archive::detail::utf8_codecvt_facet) );
 
