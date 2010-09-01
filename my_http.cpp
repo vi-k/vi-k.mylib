@@ -7,30 +7,29 @@
 #include "my_fs.h"
 #include "my_exception.h"
 
+#include <cstddef> /* std::size_t */
 #include <errno.h>
-
 #include <iterator>
-using namespace std;
 
 #include <boost/regex.hpp>
 
 namespace my { namespace http {
 
-void parse_request(const string &line,
-	string &url, vector< pair<string, string> > &params)
+void parse_request(const std::string &line,
+	std::string &url, params_type &params)
 {
-	qi::rule<string::const_iterator, string()> url_r
+	qi::rule<std::string::const_iterator, std::string()> url_r
 		= +(qi::char_ - ' ' - '?' - '&');
-	qi::rule<string::const_iterator, string()> key_r
+	qi::rule<std::string::const_iterator, std::string()> key_r
 		= +(qi::char_ - ' ' - '&' - '=');
-	qi::rule<string::const_iterator, string()> value_r
+	qi::rule<std::string::const_iterator, std::string()> value_r
 		= +(qi::char_ - ' ' - '&');
-	qi::rule<string::const_iterator, pair<string, string>()> pair_r
+	qi::rule<std::string::const_iterator, param_type()> pair_r
 		= key_r >> -('=' >> value_r);
-	qi::rule<string::const_iterator, vector< pair<string, string> >()> params_r
+	qi::rule<std::string::const_iterator, params_type()> params_r
 		= qi::lit('?') >> pair_r >> *(qi::lit('&') >> pair_r);
 
-	string::const_iterator iter = line.begin();
+	std::string::const_iterator iter = line.begin();
 
 	bool res = qi::parse( iter, line.end(),
 		qi::lit("GET ")
@@ -45,12 +44,12 @@ void parse_request(const string &line,
 			<< my::param(L"position", iter - line.begin());
 }
 
-unsigned int parse_reply(const string &line,
-	string &status_message)
+unsigned int parse_reply(const std::string &line,
+	std::string &status_message)
 {
 	unsigned int status_code;
 
-	string::const_iterator iter = line.begin();
+	std::string::const_iterator iter = line.begin();
 
 	bool res = qi::parse( iter, line.end(),
 		qi::lit("HTTP/1.1 ")
@@ -69,19 +68,18 @@ unsigned int parse_reply(const string &line,
 	return status_code;
 }
 
-void parse_header(const string &lines,
-	vector< pair<string, string> > &params)
+void parse_header(const std::string &lines, params_type &params)
 {
-	qi::rule<string::const_iterator, string()> key_r
+	qi::rule<std::string::const_iterator, std::string()> key_r
 		= +(qi::char_ - ' ' - ':' - '\r' - '\n');
-	qi::rule<string::const_iterator, string()> value_r
+	qi::rule<std::string::const_iterator, std::string()> value_r
 		= *(qi::char_ - '\r' - '\n');
-	qi::rule<string::const_iterator, pair<string, string>()> pair_r
+	qi::rule<std::string::const_iterator, param_type()> pair_r
 		= key_r >> ": " >> value_r >> "\r\n";
-	qi::rule<string::const_iterator, vector< pair<string, string> >()> params_r
+	qi::rule<std::string::const_iterator, params_type()> params_r
 		= *pair_r;
 
-	string::const_iterator iter = lines.begin();
+	std::string::const_iterator iter = lines.begin();
 
 	bool res = qi::parse( iter, lines.end(),
 		params_r >> "\r\n" >> qi::eoi,
@@ -94,7 +92,7 @@ void parse_header(const string &lines,
 		int pos = iter - lines.begin();
 		int bytes_in_line = 0;
 
-		for (string::const_iterator it = lines.begin();
+		for (std::string::const_iterator it = lines.begin();
 			it != iter; it++)
 		{
 			if (*it == '\n')
@@ -112,9 +110,9 @@ void parse_header(const string &lines,
 	}
 }
 
-string percent_decode(const char *str, int len)
+std::string percent_decode(const char *str, int len)
 {
-	string out;
+	std::string out;
 
 	/* Для нормального преобразования символов с кодами выше 127
 		необходимо использовать unsigned char, поэтому оформляем
@@ -132,7 +130,7 @@ string percent_decode(const char *str, int len)
 	return out;
 }
 
-string percent_encode(const char *str,
+std::string percent_encode(const char *str,
 	const char *escape_symbols, int len)
 {
 	static const char hex[16] =
@@ -150,7 +148,7 @@ string percent_encode(const char *str,
 	const char *end_in = ptr_in + len;
 
 	/* Сразу готовим буфер */
-	string out(len * 3, ' ');
+	std::string out(len * 3, ' ');
 	char *begin_out = (char*)out.c_str();
 	char *ptr_out = begin_out;
 
@@ -178,15 +176,15 @@ string percent_encode(const char *str,
 
 void message::read_header(tcp::socket &socket)
 {
-	size_t n = asio::read_until(socket, buf_, boost::regex("^\r\n"));
+	std::size_t n = asio::read_until(socket, buf_, boost::regex("^\r\n"));
 
 	header_.resize(n);
 	buf_.sgetn((char*)header_.c_str(), n);
 
-	vector< pair<string, string> > header_s;
+	params_type header_s;
 	parse_header(header_, header_s);
 
-	for (vector< pair<string, string> >::iterator iter = header_s.begin();
+	for (params_type::iterator iter = header_s.begin();
 		iter != header_s.end(); iter++)
 	{
 		header[ my::utf8::decode( percent_decode(iter->first) ) ]
@@ -200,14 +198,14 @@ void message::read_body(tcp::socket &socket)
 	boost::system::error_code ec;
 	asio::read(socket, buf_, boost::asio::transfer_all(), ec);
 
-	size_t n = buf_.size();
+	std::size_t n = buf_.size();
 	body.resize(n);
 	buf_.sgetn((char*)body.c_str(), n);
 }
 
-wstring message::content_type()
+std::wstring message::content_type()
 {
-	wstring value = header[L"Content-Type"];
+	std::wstring value = header[L"Content-Type"];
 
 	value = value.substr(0, value.find_first_of(L';'));
 
@@ -219,29 +217,23 @@ wstring message::content_type()
 
 void message::to_xml(::xml::ptree &pt)
 {
-	istringstream ss(body);
+	std::istringstream ss(body);
 	my::xml::parse(ss, pt);
 }
 
 void message::to_xml(::xml::wptree &pt)
 {
-	wistringstream ss( my::utf8::decode(body) );
+	std::wistringstream ss( my::utf8::decode(body) );
 	my::xml::parse(ss, pt);
 }
 
-void message::save(const wstring &filename)
+void message::save(const std::wstring &filename)
 {
 	fs::create_directories( fs::wpath(filename).parent_path() );
 
-	#if defined(_MSC_VER)
-	const std::wstring &fname = filename;
-	#else
-	std::string fname = my::str::to_string(filename);
-	#endif
-
-	ofstream fs(fname.c_str(), ios::binary);
+	fs::ofstream fs(filename, std::ios::binary);
 	if (fs)
-		fs << body << flush;
+		fs << body << std::flush;
 
 	if (!fs)
 		throw my::exception(L"Не удалось сохранить данные в файл")
@@ -251,19 +243,19 @@ void message::save(const wstring &filename)
 
 void reply::read_reply(tcp::socket &socket)
 {
-	size_t n = asio::read_until(socket, buf_, "\r\n");
+	std::size_t n = asio::read_until(socket, buf_, "\r\n");
 
 	reply_.resize(n);
 	buf_.sgetn((char*)reply_.c_str(), n);
 
-	string status_message_s;
+	std::string status_message_s;
 	status_code = parse_reply(reply_, status_message_s);
 
 	status_message = my::utf8::decode( percent_decode(status_message_s) );
 }
 
 void reply::get(tcp::socket &socket,
-	const string &request, bool do_read_body)
+	const std::string &request, bool do_read_body)
 {
 	asio::write(socket, asio::buffer(request), asio::transfer_all());
 
@@ -276,19 +268,19 @@ void reply::get(tcp::socket &socket,
 
 void request::read_request(tcp::socket &socket)
 {
-	size_t n = asio::read_until(socket, buf_, "\r\n");
+	std::size_t n = asio::read_until(socket, buf_, "\r\n");
 
 	request_.resize(n);
 	buf_.sgetn((char*)request_.c_str(), n);
 
-	string url_s;
-	vector< pair<string, string> > params_s;
+	std::string url_s;
+	params_type params_s;
 
 	parse_request(request_, url_s, params_s);
 
 	url = my::utf8::decode( percent_decode(url_s) );
 
-	for (vector< pair<string, string> >::iterator iter = params_s.begin();
+	for (params_type::iterator iter = params_s.begin();
 		iter != params_s.end(); iter++)
 	{
 		params[ my::utf8::decode( percent_decode(iter->first) ) ]

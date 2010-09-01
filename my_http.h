@@ -11,12 +11,14 @@
 
 namespace my { namespace http {
 
+typedef std::pair<std::string, std::string> param_type;
+typedef std::vector<param_type> params_type;
+
 /* Разбор строки http-запроса в виде:
 	GET /path/to/file?param1=value1&param2=value2&param3=value3... HTTP/1.1\r\n
 	Выделение из него, собственно, пути и параметров */
 void parse_request(const std::string &line,
-	std::string &url,
-	std::vector< std::pair<std::string, std::string> > &params);
+	std::string &url, params_type &params);
 
 /* Разбор строки http-ответа в виде:
 	HTTP/1.1 200 OK\r\n
@@ -29,8 +31,7 @@ unsigned int parse_reply(const std::string &line,
 	в виде:
 	Content-Type: text/plain; charset=utf8\r\n
 	Connection: close\r\n\r\n */
-void parse_header(const std::string &lines,
-	std::vector< std::pair<std::string, std::string> > &params);
+void parse_header(const std::string &lines, params_type &params);
 
 std::string percent_decode(const char *str, int len = -1);
 inline std::string percent_decode(const std::string &str)
